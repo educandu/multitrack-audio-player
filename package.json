@@ -1,0 +1,38 @@
+{
+  "name": "@educandu/multitrack-audio-player",
+  "version": "0.0.0",
+  "description": "A multitrack audio player using the Web Audio API",
+  "type": "module",
+  "exports": "./src/index.js",
+  "engines": {
+    "node": "^20.0.0"
+  },
+  "keywords": [
+    "educandu"
+  ],
+  "license": "MIT",
+  "author": "Educandu Team <team@educandu.dev>",
+  "homepage": "https://github.com/educandu/multitrack-audio-player",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/educandu/multitrack-audio-player"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@educandu/dev-tools": "^14.0.0",
+    "@vitest/coverage-v8": "^0.34.6",
+    "cors": "^2.8.5",
+    "del": "^7.1.0",
+    "envalid": "^8.0.0",
+    "eslint": "^8.55.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "express": "^4.18.2",
+    "gulp": "^4.0.2",
+    "http-proxy": "^1.18.1",
+    "node-graceful": "^3.1.0",
+    "sinon": "^17.0.1",
+    "vitest": "^0.34.6"
+  }
+}

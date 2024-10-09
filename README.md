@@ -7,7 +7,7 @@ A multitrack audio player using the Web Audio API
 ## Prerequisites
 
 * node.js ^20.0.0
-* optional: globally installed gulp: `npm i -g gulp`
+* optional: globally installed gulp: `npm i -g gulp-cli`
 
 The output of this repository is an npm package (`@educandu/multitrack-audio-player`).
 

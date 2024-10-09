@@ -1,0 +1,46 @@
+name: Publish
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    env:
+      NODE_ENV: development
+      JIRA_BASE_URL: https://educandu.atlassian.net
+      JIRA_PROJECT_KEYS: EDU
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+      - name: Install node
+        uses: actions/setup-node@v4.0.4
+        with:
+          node-version: "20.17.0"
+          cache: "yarn"
+      - name: Install node modules
+        run: yarn install --non-interactive --check-files --frozen-lockfile
+      - name: Get tag from build environment
+        id: tag
+        uses: ilDug/get-tag-action@v1.0.3
+      - name: Verify tag format
+        run: ./node_modules/.bin/gulp verifySemverTag --tag ${{steps.tag.outputs.version}}
+      - name: Set package version
+        run: npm version --allow-same-version --git-tag-version=false ${{steps.tag.outputs.version}}
+      - name: Build
+        run: ./node_modules/.bin/gulp build
+      - name: Authenticate with npm
+        run: npm set //registry.npmjs.org/:_authToken ${{secrets.NPM_AUTH_TOKEN}}
+      - name: Publish to npm
+        run: npm publish
+      - name: Create Github release and tag JIRA issues
+        run: |
+          ./node_modules/.bin/gulp release \
+            --github-token ${{secrets.GITHUB_TOKEN}} \
+            --jira-base-url ${{env.JIRA_BASE_URL}} \
+            --jira-project-keys ${{env.JIRA_PROJECT_KEYS}} \
+            --jira-user ${{secrets.JIRA_USER}} \
+            --jira-api-key ${{secrets.JIRA_API_KEY}}

@@ -1,4 +1,2 @@
-/node_modules/**
 /coverage/**
 /test-app/dist/**
-.DS_Store

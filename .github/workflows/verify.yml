@@ -1,0 +1,34 @@
+name: Verify
+on:
+  push:
+    branches:
+      - '**'
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    env:
+      NODE_ENV: development
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+      - name: Install node
+        uses: actions/setup-node@v4.0.4
+        with:
+          node-version: "20.17.0"
+          cache: "yarn"
+      - name: Install node modules
+        run: yarn install --non-interactive --check-files --frozen-lockfile
+      - name: Lint
+        run: ./node_modules/.bin/gulp lint
+      - name: Test
+        run: ./node_modules/.bin/gulp test
+      - name: Build
+        run: ./node_modules/.bin/gulp build
+      - name: Codecov
+        uses: codecov/codecov-action@v4.6.0
+        with:
+          files: ./coverage/coverage-final.json
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
