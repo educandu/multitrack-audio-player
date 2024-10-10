@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="main.css" />
+    <title>Multitrack Audio Player Test App</title>
+  </head>
+  <body>
+    <div><a href="./">Go back</a></div>
+    <h1>Track test</h1>
+    <div class="Panel">
+      <h2>AudioContext</h2>
+      <table>
+        <tr>
+          <th>state</th>
+          <td><div data-label="audio-context-state"></div></td>
+        </tr>
+        <tr>
+          <th>ACTIONS</th>
+          <td>
+            <div>
+              <button data-action="audio-context-create">Create</button>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="Panel">
+      <h2>Track</h2>
+      <table>
+        <tr>
+          <th>id</th>
+          <td><div data-label="track-id"></div></td>
+        </tr>
+        <tr>
+          <th>error</th>
+          <td><div data-label="track-error"></div></td>
+        </tr>
+        <tr>
+          <th>mediaUrl</th>
+          <td><div data-label="track-media-url"></div></td>
+        </tr>
+        <tr>
+          <th>state</th>
+          <td><div data-label="track-state"></div></td>
+        </tr>
+        <tr>
+          <th>playState</th>
+          <td><div data-label="track-play-state"></div></td>
+        </tr>
+        <tr>
+          <th>duration</th>
+          <td><div data-label="track-duration"></div></td>
+        </tr>
+        <tr>
+          <th>position</th>
+          <td><div data-label="track-position"></div></td>
+        </tr>
+        <tr>
+          <th>set position</th>
+          <td>
+            <div>
+              <input type="range" value="0" min="0" max="1" step="any" data-input="track-position-set" />
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th>set autoReplay</th>
+          <td>
+            <div>
+              <input type="checkbox" data-input="track-auto-replay-set" />
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th>ACTIONS</th>
+          <td>
+            <div>
+              <button data-action="track-create">Create</button>
+              <button data-action="track-load">Load</button>
+              <button data-action="track-start">Start</button>
+              <button data-action="track-pause">Pause</button>
+              <button data-action="track-stop">Stop</button>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <script>window.__PAGE_NAME__ = 'track-test';</script>
+    <script src="main.js"></script>
+  </body>
+</html>
+
