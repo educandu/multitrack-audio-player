@@ -19,8 +19,77 @@ $ yarn add @educandu/multitrack-audio-player
 
 ## Usage
 
-~~~
-TBD
+### Low level API
+
+#### Track
+
+The `Track` class is the main building block of this library and represents a single playable
+audio file.
+
+~~~js
+// Minimal example for creating a new track:
+const track = new Track({ mediaUrl: 'https://somedomain.com/some-sound.mp3' });
+
+// Full example for creating a new track:
+const track = new Track({
+  // Mandatory, has to be a valid URL:
+  mediaUrl: 'https://somedomain.com/some-sound.mp3',
+  // Optional, has to be an array of two floats between 0 and 1 that indicate
+  // the range withing the media file that should be played (0 means the first sample,
+  // 1 means the last sample of the sound file). Default: [0, 1]
+  playbackRange = [0.25, 0.75],
+  // Optional, has to be an object with three fields:
+  // * `gain` (float between 0 and 1) that stands for the volume between 0% and 100%.
+  // * `solo` (boolean), this value has no effect on the playback of a single track.
+  // * `mute` (boolean), if set to `true`, playback of this track will be muted.
+  // Default: { gain: 1, solo: false, mute: false }
+  gainParams = { gain: 0.5, solo: false, mute: false },
+  // Optional, will automatically start from the beginning, when `start` is called
+  // after the track has been played previously unto the very end.
+  autoRewind = true,
+  // Optional, will be used to generate the track ID, can be replaced by a custom
+  // implementation.
+  idGenerator = new IdGenerator(),
+  // Optional, will be used to download and decode the audio file, can be replaced
+  // by a custom implementation.
+  mediaLoader = new MediaLoader(),
+  // Optional, will be used to retrieve an `AudioContext` that is ready to be used,
+  // can be replaced by a custom implementation.
+  audioContextProvider = new AudioContextProvider(),
+  // Optional, will be called each time the track's `state` property has changed.
+  onStateChanged = (state, error) => { console.log(error ?? state); },
+  // Optional, will be called each time the track's `playState` property has changed.
+  onPlayStateChanged = playState => { console.log(playState); }
+});
+
+// Methods:
+track.load(); // Downloads and decodes the media file. Has to be called before any playback.
+track.start(); // Starts at the current position, if not already playing.
+track.start(5.5); // Starts the track 5.5 seconds into the media.
+track.pause(); // Pauses the track at the current position.
+track.stop(); // Stops the track at the current position, equivalent to calling `track.pause()`.
+track.stop(true); // Stops the track and moves to the very end of the media.
+track.dispose(); // Disposes this instance, no further calls should be made after this.
+
+// Read-only properties:
+console.log(track.id); // The ID of this track.
+console.log(track.error); // The error in case the state of this track is 'faulted'.
+console.log(track.mediaUrl); // The url of the loaded sound file.
+console.log(track.state); // The track state.
+console.log(track.playState); // The track's play state.
+console.log(track.duration); // The track's duration as a float in seconds.
+console.log(track.playbackRange); // The track's playback range.
+
+// Read-write properties:
+track.position = 3.75; // Sets the track's current playback position.
+track.autoRewind = true; // Sets the track's auto-rewind behavior.
+track.gainParams = { gain: 0.5, solo: false, mute: false }; // Sets the track's gain params.
+
+// Example for reading the current time code:
+setInterval(() => console.log(track.position), 100);
+
+// Example for changing the volume to 50%:
+track.gainParams = { ...track.gainParams, gain: 0.5 };
 ~~~
 
 ---
