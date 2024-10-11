@@ -1,10 +1,6 @@
 import { IdGenerator } from './id-generator.js';
 import { MediaLoader } from './media-loader.js';
 import { AudioContextProvider } from './audio-context-provider.js';
-import {
-  AudioContext as StandardizedAudioContext,
-  AudioBufferSourceNode as StandardizedAudioBufferSourceNode
-} from 'standardized-audio-context';
 
 export const TRACK_STATE = {
   created: 'created',
@@ -35,6 +31,7 @@ export class Track {
 
     // Internally assigned fields:
     this._id = this._idGenerator.generateId(this._mediaUrl);
+    this._gain = null;
     this._error = null;
     this._sound = null;
     this._buffer = null;
@@ -125,13 +122,14 @@ export class Track {
       this._sound.stop();
     }
 
-    const AudioBufferSourceNodeType = this._audioContext instanceof StandardizedAudioContext
-      ? StandardizedAudioBufferSourceNode
-      : AudioBufferSourceNode;
-
-    this._sound = new AudioBufferSourceNodeType(this._audioContext, { buffer: this._buffer });
+    this._sound = this._audioContext.createBufferSource();
+    this._sound.buffer = this._buffer;
     this._sound.onended = () => this._onSoundEnded();
-    this._sound.connect(this._audioContext.destination);
+
+    this._gain = this._audioContext.createGain();
+
+    this._sound.connect(this._gain);
+    this._gain.connect(this._audioContext.destination);
 
     this._position = startPosition;
     this._startTime = this._audioContext.currentTime - this._position;
@@ -188,6 +186,7 @@ export class Track {
   dispose() {
     this.stop();
 
+    this._gain = null;
     this._error = null;
     this._sound = null;
     this._buffer = null;

@@ -1,4 +1,4 @@
-import {  AudioContext as StandardizedAudioContext } from 'standardized-audio-context';
+import { AudioContext as StandardizedAudioContext } from 'standardized-audio-context';
 
 class ServerAudioContextCache {
   get audioContext() {
@@ -12,13 +12,12 @@ class ServerAudioContextCache {
 }
 
 class BrowserAudioContextCache {
-  constructor({ useNativeAudioContext = false }) {
+  constructor() {
     this._isDisposed = false;
     this._entries = new Map();
     this._subscribers = new Set();
     this._audioContext = null;
     this._autoResumeHandler = null;
-    this._useNativeAudioContext = useNativeAudioContext;
     this._setupAutoResume();
   }
 
@@ -39,11 +38,7 @@ class BrowserAudioContextCache {
   async resume() {
     this._throwIfDisposed();
     if (!this._audioContext) {
-      const AudioContextType = this._useNativeAudioContext
-        ? AudioContext
-        : StandardizedAudioContext;
-
-      const ctx = new AudioContextType();
+      const ctx = new StandardizedAudioContext();
       await ctx.resume();
       this._audioContext = ctx;
       this._tearDownAutoResume();
@@ -109,10 +104,10 @@ class BrowserAudioContextCache {
 }
 
 export class AudioContextCache {
-  constructor({ useNativeAudioContext = false }) {
+  constructor() {
     this._innerCache = typeof window === 'object' && typeof document === 'object' && document.nodeType === 9
-      ? new BrowserAudioContextCache({ useNativeAudioContext })
-      : new ServerAudioContextCache({ useNativeAudioContext });
+      ? new BrowserAudioContextCache()
+      : new ServerAudioContextCache();
   }
 
   get audioContext() {
