@@ -1,8 +1,7 @@
-import { Track } from '../../src/index.js';
+import { AudioContextCache, Track } from '../../src/index.js';
 
 const EXAMPLE_MEDIA_URL = 'https://cdn.openmusic.academy/media-library/oma-hkm-00-tutti-uhZ6Reh4ttWXcKKigyXzBa.mp3';
 
-let audioContext = null;
 let track = null;
 
 const getElementsByDataAttribute = attributeName => {
@@ -17,15 +16,10 @@ const labels = getElementsByDataAttribute('data-label');
 const inputs = getElementsByDataAttribute('data-input');
 
 const actionHandlers = {
-  'audio-context-create': () => {
-    audioContext = new AudioContext();
-    track?.dispose();
-    track = null;
-  },
   'track-create': () => {
     track?.dispose();
     track = null;
-    track = new Track({ mediaUrl: EXAMPLE_MEDIA_URL, audioContext });
+    track = new Track({ mediaUrl: EXAMPLE_MEDIA_URL });
   },
   'track-load': () => {
     track?.load();
@@ -55,7 +49,7 @@ const inputHandlers = {
 };
 
 function updateUI() {
-  labels['audio-context-state'].innerText = audioContext?.state ?? '';
+  labels['audio-context-state'].innerText = AudioContextCache.global.audioContext ? 'created' : 'not created';
   labels['track-id'].innerText = track?.id ?? '';
   labels['track-error'].innerText = track?.error?.toString() ?? '';
   labels['track-media-url'].innerText = track?.mediaUrl ?? '';

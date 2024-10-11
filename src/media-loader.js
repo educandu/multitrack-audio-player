@@ -1,6 +1,8 @@
+import { AudioContextProvider } from './audio-context-provider.js';
+
 export class MediaLoader {
-  constructor({ audioContext }) {
-    this._audioContext = audioContext;
+  constructor({ audioContextProvider = new AudioContextProvider() }) {
+    this._audioContextProvider = audioContextProvider;
   }
 
   _loadArrayBuffer(mediaUrl) {
@@ -29,7 +31,8 @@ export class MediaLoader {
 
   async loadMedia(mediaUrl) {
     const arrayBuffer = await this._loadArrayBuffer(mediaUrl);
-    const audioBuffer = await this._decodeArrayBuffer(arrayBuffer, this._audioContext);
+    const audioContext = await this._audioContextProvider.waitForAudioContext();
+    const audioBuffer = await this._decodeArrayBuffer(arrayBuffer, audioContext);
     return audioBuffer;
   }
 }

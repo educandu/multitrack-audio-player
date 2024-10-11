@@ -1,5 +1,10 @@
-import { IdProvider } from './id-provider.js';
+import { IdGenerator } from './id-generator.js';
 import { MediaLoader } from './media-loader.js';
+import { AudioContextProvider } from './audio-context-provider.js';
+import {
+  AudioContext as StandardizedAudioContext,
+  AudioBufferSourceNode as StandardizedAudioBufferSourceNode
+} from 'standardized-audio-context';
 
 export const TRACK_STATE = {
   created: 'created',
@@ -16,25 +21,26 @@ export const TRACK_PLAY_STATE = {
 };
 
 export class Track {
-  constructor({ mediaUrl, audioContext, mediaLoader, idProvider, autoReplay, onStateChanged, onPlayStateChanged }) {
+  constructor({ mediaUrl, audioContextProvider, mediaLoader, idGenerator, autoReplay, onStateChanged, onPlayStateChanged }) {
     // Mandatory fields:
     this._mediaUrl = mediaUrl;
-    this._audioContext = audioContext;
 
     // Optional fields:
     this._autoReplay = autoReplay ?? false;
     this._onStateChanged = onStateChanged ?? (() => {});
     this._onPlayStateChanged = onPlayStateChanged ?? (() => {});
-    this._idProvider = idProvider ?? new IdProvider();
-    this._mediaLoader = mediaLoader ?? new MediaLoader({ audioContext });
+    this._idGenerator = idGenerator ?? new IdGenerator();
+    this._audioContextProvider = audioContextProvider ?? new AudioContextProvider();
+    this._mediaLoader = mediaLoader ?? new MediaLoader({ audioContextProvider: this._audioContextProvider });
 
     // Internally assigned fields:
-    this._id = this._idProvider.createId(this._mediaUrl);
+    this._id = this._idGenerator.generateId(this._mediaUrl);
     this._error = null;
     this._sound = null;
     this._buffer = null;
     this._duration = null;
     this._startTime = null;
+    this._audioContext = null;
     this._pauseOrStopPosition = null;
     this._state = TRACK_STATE.created;
     this._playState = TRACK_PLAY_STATE.stopped;
@@ -90,6 +96,7 @@ export class Track {
       this._changeState(TRACK_STATE.loading);
       this._buffer = await this._mediaLoader.loadMedia(this._mediaUrl);
       this._duration = this._buffer.duration;
+      this._audioContext = await this._audioContextProvider.waitForAudioContext();
       this._changeState(TRACK_STATE.ready);
     } catch (error) {
       this._changeState(TRACK_STATE.faulted, error);
@@ -118,7 +125,11 @@ export class Track {
       this._sound.stop();
     }
 
-    this._sound = new AudioBufferSourceNode(this._audioContext, { buffer: this._buffer });
+    const AudioBufferSourceNodeType = this._audioContext instanceof StandardizedAudioContext
+      ? StandardizedAudioBufferSourceNode
+      : AudioBufferSourceNode;
+
+    this._sound = new AudioBufferSourceNodeType(this._audioContext, { buffer: this._buffer });
     this._sound.onended = () => this._onSoundEnded();
     this._sound.connect(this._audioContext.destination);
 
@@ -185,7 +196,7 @@ export class Track {
     this._pauseOrStopPosition = null;
     this._state = TRACK_STATE.disposed;
     this._playState = TRACK_PLAY_STATE.stopped;
-    this._idProvider = null;
+    this._idGenerator = null;
     this._mediaLoader = null;
     this._audioContext = null;
     this._onStateChanged = null;
