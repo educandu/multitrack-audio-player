@@ -25,10 +25,6 @@
           <td><div data-label="track-id"></div></td>
         </tr>
         <tr>
-          <th>error</th>
-          <td><div data-label="track-error"></div></td>
-        </tr>
-        <tr>
           <th>mediaUrl</th>
           <td><div data-label="track-media-url"></div></td>
         </tr>
@@ -45,24 +41,36 @@
           <td><div data-label="track-duration"></div></td>
         </tr>
         <tr>
-          <th>position</th>
-          <td><div data-label="track-position"></div></td>
-        </tr>
-        <tr>
-          <th>set position</th>
+          <th>gainParams</th>
           <td>
             <div>
-              <input type="range" value="0" min="0" max="1" step="any" data-input="track-position-set" />
+              <input type="range" value="1" min="0" max="1" step="any" data-input="track-gain-params-gain-set" />
+              <label><input type="checkbox" data-input="track-gain-params-solo-set" /> SOLO</label>
+              <label><input type="checkbox" data-input="track-gain-params-mute-set" /> MUTE</label>
+              <span data-label="track-gain-params"></span>
             </div>
           </td>
         </tr>
         <tr>
-          <th>set autoReplay</th>
+          <th>position</th>
+          <td>
+            <div>
+              <input type="range" value="0" min="0" max="1" step="any" data-input="track-position-set" />
+              <span data-label="track-position"></span>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <th>autoReplay</th>
           <td>
             <div>
               <input type="checkbox" data-input="track-auto-replay-set" />
             </div>
           </td>
+        </tr>
+        <tr>
+          <th>error</th>
+          <td><div data-label="track-error"></div></td>
         </tr>
         <tr>
           <th>ACTIONS</th>

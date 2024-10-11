@@ -45,11 +45,26 @@ const inputHandlers = {
     if (track) {
       track.autoReplay = event.target.checked;
     }
+  },
+  'track-gain-params-gain-set': event => {
+    if (track) {
+      track.gainParams = { ...track.gainParams, gain: Number(event.target.value) };
+    }
+  },
+  'track-gain-params-solo-set': event => {
+    if (track) {
+      track.gainParams = { ...track.gainParams, solo: event.target.checked };
+    }
+  },
+  'track-gain-params-mute-set': event => {
+    if (track) {
+      track.gainParams = { ...track.gainParams, mute: event.target.checked };
+    }
   }
 };
 
 function updateUI() {
-  labels['audio-context-state'].innerText = AudioContextCache.global.audioContext ? 'created' : 'not created';
+  labels['audio-context-state'].innerText = AudioContextCache.global.audioContext?.state ?? '';
   labels['track-id'].innerText = track?.id ?? '';
   labels['track-error'].innerText = track?.error?.toString() ?? '';
   labels['track-media-url'].innerText = track?.mediaUrl ?? '';
@@ -57,10 +72,19 @@ function updateUI() {
   labels['track-play-state'].innerText = track?.playState ?? '';
   labels['track-duration'].innerText = track?.duration ?? '';
   labels['track-position'].innerText = track?.position ?? '';
+  labels['track-gain-params'].innerText = track?.gainParams ? JSON.stringify(track.gainParams) : '';
+
+  if (inputs['track-gain-params-gain-set'] !== document.activeElement) {
+    inputs['track-gain-params-gain-set'].value = track?.gainParams?.gain ?? 1;
+  }
+
   if (inputs['track-position-set'] !== document.activeElement) {
     inputs['track-position-set'].value = (track?.position ?? 0) / (track?.duration ?? 1);
   }
+
   inputs['track-auto-replay-set'].checked = track?.autoReplay ?? false;
+  inputs['track-gain-params-solo-set'].checked = track?.gainParams.solo ?? false;
+  inputs['track-gain-params-mute-set'].checked = track?.gainParams.mute ?? false;
 }
 
 window.document.addEventListener('click', event => {

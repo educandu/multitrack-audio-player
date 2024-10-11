@@ -12,4 +12,21 @@ html, body {
   padding: 10px 20px;
   border: 1px solid var(--border-color);
   background-color: var(--background-color-light);
+
+  & > *:first-child {
+    margin-top: 5px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 5px 15px;
+
+    &:first-child {
+      padding-left: 0;
+    }
+
+    &:last-child {
+      padding-right: 0;
+    }
+  }
 }

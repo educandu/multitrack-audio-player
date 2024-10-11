@@ -16,13 +16,18 @@ export const TRACK_PLAY_STATE = {
   stopped: 'stopped'
 };
 
+const DEFAULT_GAIN_PARAMS = { gain: 1, solo: false, mute: false };
+
+const GAIN_DECAY_DURATION = 0.015;
+
 export class Track {
-  constructor({ mediaUrl, audioContextProvider, mediaLoader, idGenerator, autoReplay, onStateChanged, onPlayStateChanged }) {
+  constructor({ mediaUrl, gainParams, autoReplay, audioContextProvider, mediaLoader, idGenerator, onStateChanged, onPlayStateChanged }) {
     // Mandatory fields:
     this._mediaUrl = mediaUrl;
 
     // Optional fields:
     this._autoReplay = autoReplay ?? false;
+    this._gainParams = gainParams ?? { ...DEFAULT_GAIN_PARAMS };
     this._onStateChanged = onStateChanged ?? (() => {});
     this._onPlayStateChanged = onPlayStateChanged ?? (() => {});
     this._idGenerator = idGenerator ?? new IdGenerator();
@@ -88,6 +93,15 @@ export class Track {
     this._autoReplay = newAutoReplay;
   }
 
+  get gainParams() {
+    return this._gainParams;
+  }
+
+  set gainParams(newGainParams) {
+    this._gainParams = newGainParams;
+    this._applyGainParams();
+  }
+
   async load() {
     try {
       this._changeState(TRACK_STATE.loading);
@@ -127,6 +141,7 @@ export class Track {
     this._sound.onended = () => this._onSoundEnded();
 
     this._gain = this._audioContext.createGain();
+    this._applyGainParams();
 
     this._sound.connect(this._gain);
     this._gain.connect(this._audioContext.destination);
@@ -171,6 +186,25 @@ export class Track {
 
   _onSoundEnded() {
     this.stop(true);
+  }
+
+  _applyGainParams() {
+    if (!this._gain) {
+      return;
+    }
+
+    const newValue = this._gainParams.mute ? 0 : this._gainParams.gain;
+    if (this._gain.gain.value === newValue) {
+      return;
+    }
+
+    if (this._playState === TRACK_PLAY_STATE.started) {
+      // To avoid ugly clicking during playback when adjusting the volume
+      // we have to switch to the new volume gradually (sample by sample):
+      this._gain.gain.setTargetAtTime(newValue, this._audioContext.currentTime, GAIN_DECAY_DURATION);
+    } else {
+      this._gain.gain.value = newValue;
+    }
   }
 
   _changeState(newState, error = null) {
