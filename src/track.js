@@ -16,223 +16,281 @@ export const TRACK_PLAY_STATE = {
   stopped: 'stopped'
 };
 
+const GAIN_DECAY_DURATION = 0.015;
+const DEFAULT_PLAYBACK_RANGE = [0, 1];
 const DEFAULT_GAIN_PARAMS = { gain: 1, solo: false, mute: false };
 
-const GAIN_DECAY_DURATION = 0.015;
-
 export class Track {
-  constructor({ mediaUrl, gainParams, autoReplay, audioContextProvider, mediaLoader, idGenerator, onStateChanged, onPlayStateChanged }) {
-    // Mandatory fields:
-    this._mediaUrl = mediaUrl;
+  // Mandatory fields:
+  #mediaUrl;
 
-    // Optional fields:
-    this._autoReplay = autoReplay ?? false;
-    this._gainParams = gainParams ?? { ...DEFAULT_GAIN_PARAMS };
-    this._onStateChanged = onStateChanged ?? (() => {});
-    this._onPlayStateChanged = onPlayStateChanged ?? (() => {});
-    this._idGenerator = idGenerator ?? new IdGenerator();
-    this._audioContextProvider = audioContextProvider ?? new AudioContextProvider();
-    this._mediaLoader = mediaLoader ?? new MediaLoader({ audioContextProvider: this._audioContextProvider });
+  // Optional fields:
+  #playbackRange;
+  #gainParams;
+  #autoRewind;
+  #idGenerator;
+  #mediaLoader;
+  #audioContextProvider;
+  #onStateChanged;
+  #onPlayStateChanged;
 
-    // Internally assigned fields:
-    this._id = this._idGenerator.generateId(this._mediaUrl);
-    this._gain = null;
-    this._error = null;
-    this._sound = null;
-    this._buffer = null;
-    this._duration = null;
-    this._startTime = null;
-    this._audioContext = null;
-    this._pauseOrStopPosition = null;
-    this._state = TRACK_STATE.created;
-    this._playState = TRACK_PLAY_STATE.stopped;
+  // Internally assigned fields:
+  #id;
+  #gain;
+  #error;
+  #sound;
+  #buffer;
+  #startTime;
+  #audioContext;
+  #trackDuration;
+  #rangeDuration;
+  #lastStopPositionInTrack;
+  #rangeEndPositionInTrack;
+  #rangeStartPositionInTrack;
+  #state;
+  #playState;
+
+  constructor({
+    mediaUrl,
+    playbackRange = DEFAULT_PLAYBACK_RANGE,
+    gainParams = DEFAULT_GAIN_PARAMS,
+    autoRewind = false,
+    idGenerator = new IdGenerator(),
+    mediaLoader = new MediaLoader(),
+    audioContextProvider = new AudioContextProvider(),
+    onStateChanged = () => {},
+    onPlayStateChanged = () => {}
+  }) {
+    this.#mediaUrl = mediaUrl;
+    this.#playbackRange = playbackRange;
+    this.#gainParams = gainParams;
+    this.#autoRewind = autoRewind;
+    this.#idGenerator = idGenerator;
+    this.#mediaLoader = mediaLoader;
+    this.#audioContextProvider = audioContextProvider;
+    this.#onStateChanged = onStateChanged;
+    this.#onPlayStateChanged = onPlayStateChanged;
+    this.#id = this.#idGenerator.generateId(this.#mediaUrl);
+    this.#gain = null;
+    this.#error = null;
+    this.#sound = null;
+    this.#buffer = null;
+    this.#startTime = null;
+    this.#audioContext = null;
+    this.#trackDuration = null;
+    this.#rangeDuration = null;
+    this.#lastStopPositionInTrack = null;
+    this.#rangeEndPositionInTrack = null;
+    this.#rangeStartPositionInTrack = null;
+    this.#state = TRACK_STATE.created;
+    this.#playState = TRACK_PLAY_STATE.stopped;
   }
 
   get id() {
-    return this._id;
+    return this.#id;
   }
 
   get error() {
-    return this._error;
+    return this.#error;
   }
 
   get mediaUrl() {
-    return this._mediaUrl;
+    return this.#mediaUrl;
   }
 
   get state() {
-    return this._state;
+    return this.#state;
   }
 
   get playState() {
-    return this._playState;
+    return this.#playState;
   }
 
   get duration() {
-    return this._duration;
+    return this.#rangeDuration;
+  }
+
+  get playbackRange() {
+    return this.#playbackRange;
   }
 
   get position() {
-    return this._calculateCurrentPosition();
+    return this.#calculateCurrentPositionInTrack() - (this.#rangeStartPositionInTrack ?? 0);
   }
 
   set position(newPosition) {
-    if (this._playState === TRACK_PLAY_STATE.started) {
-      this.start(newPosition, true);
+    if (this.#playState === TRACK_PLAY_STATE.started) {
+      this.start(newPosition);
     } else {
-      this._startTime = this._audioContext.currentTime - newPosition;
-      this._pauseOrStopPosition = newPosition;
+      const newPositionInTrack = newPosition + this.#rangeStartPositionInTrack;
+      this.#startTime = this.#audioContext.currentTime - newPositionInTrack;
+      this.#lastStopPositionInTrack = newPositionInTrack;
     }
   }
 
-  get autoReplay() {
-    return this._autoReplay;
+  get autoRewind() {
+    return this.#autoRewind;
   }
 
-  set autoReplay(newAutoReplay) {
-    this._autoReplay = newAutoReplay;
+  set autoRewind(newAutoRewind) {
+    this.#autoRewind = newAutoRewind;
   }
 
   get gainParams() {
-    return this._gainParams;
+    return this.#gainParams;
   }
 
   set gainParams(newGainParams) {
-    this._gainParams = newGainParams;
-    this._applyGainParams();
+    this.#gainParams = newGainParams;
+    this.#applyGainParams();
   }
 
   async load() {
     try {
-      this._changeState(TRACK_STATE.loading);
-      this._buffer = await this._mediaLoader.loadMedia(this._mediaUrl);
-      this._duration = this._buffer.duration;
-      this._audioContext = await this._audioContextProvider.waitForAudioContext();
-      this._changeState(TRACK_STATE.ready);
+      this.#changeState(TRACK_STATE.loading);
+      this.#buffer = await this.#mediaLoader.loadMedia(this.#mediaUrl);
+      this.#trackDuration = this.#buffer.duration;
+      this.#rangeStartPositionInTrack = this.#playbackRange[0] * this.#trackDuration;
+      this.#rangeEndPositionInTrack = this.#playbackRange[1] * this.#trackDuration;
+      this.#rangeDuration = this.#rangeEndPositionInTrack - this.#rangeStartPositionInTrack;
+      this.#audioContext = await this.#audioContextProvider.waitForAudioContext();
+      this.#changeState(TRACK_STATE.ready);
     } catch (error) {
-      this._changeState(TRACK_STATE.faulted, error);
+      this.#changeState(TRACK_STATE.faulted, error);
     }
   }
 
-  start(position = null, forceRestart = false) {
-    if (this._playState === TRACK_PLAY_STATE.started && !forceRestart) {
+  start(position = null) {
+    if (this.#playState === TRACK_PLAY_STATE.started && position === null) {
       return;
     }
 
-    let startPosition = position ?? this._pauseOrStopPosition ?? 0;
-    if (startPosition >= this._duration) {
-      if (this._autoReplay) {
-        startPosition = 0;
+    let startPositionInTrack;
+    if (position !== null) {
+      startPositionInTrack = position + this.#rangeStartPositionInTrack;
+    } else if (this.#lastStopPositionInTrack) {
+      startPositionInTrack = this.#lastStopPositionInTrack;
+    } else {
+      startPositionInTrack = this.#rangeStartPositionInTrack;
+    }
+
+    if (startPositionInTrack >= this.#rangeEndPositionInTrack) {
+      if (this.#autoRewind) {
+        startPositionInTrack = this.#rangeStartPositionInTrack;
       } else {
         return;
       }
     }
 
-    if (this._sound) {
-      this._sound.onended = null;
+    if (this.#sound) {
+      this.#sound.onended = null;
     }
 
-    if (this._playState === TRACK_PLAY_STATE.started) {
-      this._sound.stop();
+    if (this.#playState === TRACK_PLAY_STATE.started) {
+      this.#sound.stop();
     }
 
-    this._sound = this._audioContext.createBufferSource();
-    this._sound.buffer = this._buffer;
-    this._sound.onended = () => this._onSoundEnded();
+    this.#sound = this.#audioContext.createBufferSource();
+    this.#sound.buffer = this.#buffer;
+    this.#sound.onended = () => this.#onSoundEnded();
 
-    this._gain = this._audioContext.createGain();
-    this._applyGainParams();
+    this.#gain = this.#audioContext.createGain();
+    this.#applyGainParams();
 
-    this._sound.connect(this._gain);
-    this._gain.connect(this._audioContext.destination);
+    this.#sound.connect(this.#gain);
+    this.#gain.connect(this.#audioContext.destination);
 
-    this._position = startPosition;
-    this._startTime = this._audioContext.currentTime - this._position;
-    this._sound.start(this._audioContext.currentTime, this._position);
+    const currentTime = this.#audioContext.currentTime;
+    const remainingDurationInRange = this.#rangeEndPositionInTrack - startPositionInTrack;
 
-    this._changePlayState(TRACK_PLAY_STATE.started);
-    this._pauseOrStopPosition = null;
+    this.#lastStopPositionInTrack = null;
+    this.#startTime = currentTime - startPositionInTrack;
+    this.#sound.start(currentTime, startPositionInTrack, remainingDurationInRange);
+
+    this.#changePlayState(TRACK_PLAY_STATE.started);
   }
 
   pause() {
-    if (this._playState !== TRACK_PLAY_STATE.started) {
+    if (this.#playState !== TRACK_PLAY_STATE.started) {
       return;
     }
 
-    this._sound.onended = null;
-    this._sound.stop();
-    this._pauseOrStopPosition = this._audioContext.currentTime - this._startTime;
-    this._changePlayState(TRACK_PLAY_STATE.pausing);
+    this.#sound.onended = null;
+    this.#sound.stop();
+    this.#lastStopPositionInTrack = this.#calculateCurrentPositionInTrack();
+    this.#startTime = null;
+
+    this.#changePlayState(TRACK_PLAY_STATE.pausing);
   }
 
   stop(moveToEnd = false) {
-    if (this._playState === TRACK_PLAY_STATE.stopped) {
+    if (this.#playState === TRACK_PLAY_STATE.stopped) {
       return;
     }
 
-    this._sound.onended = null;
-    this._sound.stop();
-    this._pauseOrStopPosition = moveToEnd
-      ? this._duration
-      : this._audioContext.currentTime - this._startTime;
-    this._changePlayState(TRACK_PLAY_STATE.stopped);
+    this.#sound.onended = null;
+    this.#sound.stop();
+    this.#lastStopPositionInTrack = moveToEnd ? this.#rangeEndPositionInTrack : this.#calculateCurrentPositionInTrack();
+    this.#startTime = null;
+
+    this.#changePlayState(TRACK_PLAY_STATE.stopped);
   }
 
-  _calculateCurrentPosition() {
-    return this._playState === TRACK_PLAY_STATE.started
-      ? this._audioContext.currentTime - this._startTime
-      : this._pauseOrStopPosition ?? 0;
+  #calculateCurrentPositionInTrack() {
+    return this.#playState === TRACK_PLAY_STATE.started
+      ? this.#audioContext.currentTime - this.#startTime
+      : this.#lastStopPositionInTrack ?? this.#rangeStartPositionInTrack ?? 0;
   }
 
-  _onSoundEnded() {
+  #onSoundEnded() {
     this.stop(true);
   }
 
-  _applyGainParams() {
-    if (!this._gain) {
+  #applyGainParams() {
+    if (!this.#gain) {
       return;
     }
 
-    const newValue = this._gainParams.mute ? 0 : this._gainParams.gain;
-    if (this._gain.gain.value === newValue) {
+    const newValue = this.#gainParams.mute ? 0 : this.#gainParams.gain;
+    if (this.#gain.gain.value === newValue) {
       return;
     }
 
-    if (this._playState === TRACK_PLAY_STATE.started) {
+    if (this.#playState === TRACK_PLAY_STATE.started) {
       // To avoid ugly clicking during playback when adjusting the volume
       // we have to switch to the new volume gradually (sample by sample):
-      this._gain.gain.setTargetAtTime(newValue, this._audioContext.currentTime, GAIN_DECAY_DURATION);
+      this.#gain.gain.setTargetAtTime(newValue, this.#audioContext.currentTime, GAIN_DECAY_DURATION);
     } else {
-      this._gain.gain.value = newValue;
+      this.#gain.gain.value = newValue;
     }
   }
 
-  _changeState(newState, error = null) {
-    this._state = newState;
-    this._error = error;
-    this._onStateChanged(newState, error);
+  #changeState(newState, error = null) {
+    this.#state = newState;
+    this.#error = error;
+    this.#onStateChanged(newState, error);
   }
-  _changePlayState(newPlayState) {
-    this._playState = newPlayState;
-    this._onPlayStateChanged(newPlayState);
+  #changePlayState(newPlayState) {
+    this.#playState = newPlayState;
+    this.#onPlayStateChanged(newPlayState);
   }
 
   dispose() {
     this.stop();
 
-    this._gain = null;
-    this._error = null;
-    this._sound = null;
-    this._buffer = null;
-    this._duration = null;
-    this._startTime = null;
-    this._pauseOrStopPosition = null;
-    this._state = TRACK_STATE.disposed;
-    this._playState = TRACK_PLAY_STATE.stopped;
-    this._idGenerator = null;
-    this._mediaLoader = null;
-    this._audioContext = null;
-    this._onStateChanged = null;
-    this._onPlayStateChanged = null;
+    this.#gain = null;
+    this.#error = null;
+    this.#sound = null;
+    this.#buffer = null;
+    this.#trackDuration = null;
+    this.#startTime = null;
+    this.#lastStopPositionInTrack = null;
+    this.#state = TRACK_STATE.disposed;
+    this.#playState = TRACK_PLAY_STATE.stopped;
+    this.#idGenerator = null;
+    this.#mediaLoader = null;
+    this.#audioContext = null;
+    this.#onStateChanged = null;
+    this.#onPlayStateChanged = null;
   }
 }

@@ -19,7 +19,7 @@ const actionHandlers = {
   'track-create': () => {
     track?.dispose();
     track = null;
-    track = new Track({ mediaUrl: EXAMPLE_MEDIA_URL });
+    track = new Track({ mediaUrl: EXAMPLE_MEDIA_URL, playbackRange: [0.25, 0.75] });
   },
   'track-load': () => {
     track?.load();
@@ -36,27 +36,27 @@ const actionHandlers = {
 };
 
 const inputHandlers = {
-  'track-position-set': event => {
+  'track-position': event => {
     if (track && track.duration) {
       track.position = Number(event.target.value) * (track.duration ?? 0);
     }
   },
-  'track-auto-replay-set': event => {
+  'track-autoRewind': event => {
     if (track) {
-      track.autoReplay = event.target.checked;
+      track.autoRewind = event.target.checked;
     }
   },
-  'track-gain-params-gain-set': event => {
+  'track-gainParams-gain': event => {
     if (track) {
       track.gainParams = { ...track.gainParams, gain: Number(event.target.value) };
     }
   },
-  'track-gain-params-solo-set': event => {
+  'track-gainParams-solo': event => {
     if (track) {
       track.gainParams = { ...track.gainParams, solo: event.target.checked };
     }
   },
-  'track-gain-params-mute-set': event => {
+  'track-gainParams-mute': event => {
     if (track) {
       track.gainParams = { ...track.gainParams, mute: event.target.checked };
     }
@@ -64,7 +64,7 @@ const inputHandlers = {
 };
 
 function updateUI() {
-  labels['audio-context-state'].innerText = AudioContextCache.global.audioContext?.state ?? '';
+  labels['audioContext-state'].innerText = AudioContextCache.global.audioContext?.state ?? '';
   labels['track-id'].innerText = track?.id ?? '';
   labels['track-error'].innerText = track?.error?.toString() ?? '';
   labels['track-media-url'].innerText = track?.mediaUrl ?? '';
@@ -72,19 +72,19 @@ function updateUI() {
   labels['track-play-state'].innerText = track?.playState ?? '';
   labels['track-duration'].innerText = track?.duration ?? '';
   labels['track-position'].innerText = track?.position ?? '';
-  labels['track-gain-params'].innerText = track?.gainParams ? JSON.stringify(track.gainParams) : '';
+  labels['track-gainParams'].innerText = track?.gainParams ? JSON.stringify(track.gainParams) : '';
 
-  if (inputs['track-gain-params-gain-set'] !== document.activeElement) {
-    inputs['track-gain-params-gain-set'].value = track?.gainParams?.gain ?? 1;
+  if (inputs['track-gainParams-gain'] !== document.activeElement) {
+    inputs['track-gainParams-gain'].value = track?.gainParams?.gain ?? 1;
   }
 
-  if (inputs['track-position-set'] !== document.activeElement) {
-    inputs['track-position-set'].value = (track?.position ?? 0) / (track?.duration ?? 1);
+  if (inputs['track-position'] !== document.activeElement) {
+    inputs['track-position'].value = (track?.position ?? 0) / (track?.duration ?? 1);
   }
 
-  inputs['track-auto-replay-set'].checked = track?.autoReplay ?? false;
-  inputs['track-gain-params-solo-set'].checked = track?.gainParams.solo ?? false;
-  inputs['track-gain-params-mute-set'].checked = track?.gainParams.mute ?? false;
+  inputs['track-autoRewind'].checked = track?.autoRewind ?? false;
+  inputs['track-gainParams-solo'].checked = track?.gainParams.solo ?? false;
+  inputs['track-gainParams-mute'].checked = track?.gainParams.mute ?? false;
 }
 
 window.document.addEventListener('click', event => {

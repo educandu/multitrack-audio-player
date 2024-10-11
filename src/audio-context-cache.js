@@ -12,131 +12,139 @@ class ServerAudioContextCache {
 }
 
 class BrowserAudioContextCache {
+  #isDisposed;
+  #entries;
+  #subscribers;
+  #audioContext;
+  #autoResumeHandler;
+
   constructor() {
-    this._isDisposed = false;
-    this._entries = new Map();
-    this._subscribers = new Set();
-    this._audioContext = null;
-    this._autoResumeHandler = null;
-    this._setupAutoResume();
+    this.#isDisposed = false;
+    this.#entries = new Map();
+    this.#subscribers = new Set();
+    this.#audioContext = null;
+    this.#autoResumeHandler = null;
+    this.#setupAutoResume();
   }
 
   get audioContext() {
-    return this._audioContext;
+    return this.#audioContext;
   }
 
   subscribe(callback) {
-    this._throwIfDisposed();
-    this._subscribers.add(callback);
+    this.#throwIfDisposed();
+    this.#subscribers.add(callback);
   }
 
   unsubscribe(callback) {
-    this._throwIfDisposed();
-    this._subscribers.delete(callback);
+    this.#throwIfDisposed();
+    this.#subscribers.delete(callback);
   }
 
   async resume() {
-    this._throwIfDisposed();
-    if (!this._audioContext) {
+    this.#throwIfDisposed();
+    if (!this.#audioContext) {
       const ctx = new StandardizedAudioContext();
       await ctx.resume();
-      this._audioContext = ctx;
-      this._tearDownAutoResume();
+      this.#audioContext = ctx;
+      this.#tearDownAutoResume();
 
-      if (this._audioContext.state !== 'running') {
-        this._audioContext.close();
-        this._audioContext = null;
-        this._setupAutoResume();
+      if (this.#audioContext.state !== 'running') {
+        this.#audioContext.close();
+        this.#audioContext = null;
+        this.#setupAutoResume();
         throw new Error('AudioContext has to be resumed during a user interaction');
       }
 
       const listener = () => {
-        if (this._audioContext.state !== 'running') {
-          this._audioContext.removeEventListener('statechange', listener);
-          this._audioContext.close();
-          this._audioContext = null;
-          this._setupAutoResume();
-          this._notifySubscribers();
+        if (this.#audioContext.state !== 'running') {
+          this.#audioContext.removeEventListener('statechange', listener);
+          this.#audioContext.close();
+          this.#audioContext = null;
+          this.#setupAutoResume();
+          this.#notifySubscribers();
         }
       };
 
-      this._audioContext.addEventListener('statechange', listener);
-      this._notifySubscribers();
+      this.#audioContext.addEventListener('statechange', listener);
+      this.#notifySubscribers();
     }
   }
 
-  _notifySubscribers() {
-    for (const subscriber of this._subscribers) {
+  #notifySubscribers() {
+    for (const subscriber of this.#subscribers) {
       subscriber();
     }
   }
 
-  _setupAutoResume() {
-    if (!this._autoResumeHandler) {
-      this._autoResumeHandler = async () => {
+  #setupAutoResume() {
+    if (!this.#autoResumeHandler) {
+      this.#autoResumeHandler = async () => {
         await this.resume();
-        this._tearDownAutoResume();
+        this.#tearDownAutoResume();
       };
-      window.addEventListener('click', this._autoResumeHandler);
-      window.addEventListener('keydown', this._autoResumeHandler);
+      window.addEventListener('click', this.#autoResumeHandler);
+      window.addEventListener('keydown', this.#autoResumeHandler);
     }
   }
 
-  _tearDownAutoResume() {
-    if (this._autoResumeHandler) {
-      window.removeEventListener('click', this._autoResumeHandler);
-      window.removeEventListener('keydown', this._autoResumeHandler);
-      this._autoResumeHandler = null;
+  #tearDownAutoResume() {
+    if (this.#autoResumeHandler) {
+      window.removeEventListener('click', this.#autoResumeHandler);
+      window.removeEventListener('keydown', this.#autoResumeHandler);
+      this.#autoResumeHandler = null;
     }
   }
 
-  _throwIfDisposed() {
-    if (this._isDisposed) {
+  #throwIfDisposed() {
+    if (this.#isDisposed) {
       throw new Error('Cannot use a disposed instance');
     }
   }
 
   dispose() {
-    this._entries.clear();
-    this._subscribers.clear();
-    this._isDisposed = true;
+    this.#entries.clear();
+    this.#subscribers.clear();
+    this.#isDisposed = true;
   }
 }
 
 export class AudioContextCache {
+  #innerCache;
+
   constructor() {
-    this._innerCache = typeof window === 'object' && typeof document === 'object' && document.nodeType === 9
+    this.#innerCache = typeof window === 'object' && typeof document === 'object' && document.nodeType === 9
       ? new BrowserAudioContextCache()
       : new ServerAudioContextCache();
   }
 
   get audioContext() {
-    return this._innerCache._audioContext;
+    return this.#innerCache.audioContext;
   }
 
   subscribe(callback) {
-    return this._innerCache.subscribe(callback);
+    return this.#innerCache.subscribe(callback);
   }
 
   unsubscribe(callback) {
-    return this._innerCache.unsubscribe(callback);
+    return this.#innerCache.unsubscribe(callback);
   }
 
   resume() {
-    return this._innerCache.resume();
+    return this.#innerCache.resume();
   }
 
   dispose() {
-    return this._innerCache.dispose();
+    return this.#innerCache.dispose();
   }
 
-  static _global = null;
+  static #global = null;
 
   static get global() {
-    if (!AudioContextCache._global) {
-      AudioContextCache._global = new AudioContextCache({ useNativeAudioContext: false });
+    if (!AudioContextCache.#global) {
+      AudioContextCache.#global = new AudioContextCache({ useNativeAudioContext: false });
     }
 
-    return AudioContextCache._global;
+    return AudioContextCache.#global;
   }
 }
