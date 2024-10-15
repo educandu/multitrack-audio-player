@@ -11,8 +11,8 @@ export default function TrackPanel({ track }) {
             <td><div>{track.id}</div></td>
           </tr>
           <tr>
-            <th>mediaUrl</th>
-            <td><div>{track.mediaUrl}</div></td>
+            <th>sourceUrl</th>
+            <td><div>{track.sourceUrl}</div></td>
           </tr>
           <tr>
             <th>state</th>
@@ -47,6 +47,7 @@ export default function TrackPanel({ track }) {
                   &nbsp;
                   <span>SOLO</span>
                 </label>
+                &nbsp;
                 <label>
                   <input
                     type="checkbox"
@@ -56,6 +57,8 @@ export default function TrackPanel({ track }) {
                   &nbsp;
                   <span>MUTE</span>
                 </label>
+                &nbsp;
+                &nbsp;
                 <span data-label="track-gainParams">{JSON.stringify(track.gainParams)}</span>
               </div>
             </td>
@@ -72,6 +75,8 @@ export default function TrackPanel({ track }) {
                   value={track.position / track.duration || 0}
                   onChange={event => { track.position = Number(event.target.value) * track.duration; }}
                   />
+                &nbsp;
+                &nbsp;
                 <span>{track.position}</span>
               </div>
             </td>

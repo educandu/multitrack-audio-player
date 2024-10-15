@@ -7,10 +7,10 @@ export class MediaLoader {
     this.#audioContextProvider = audioContextProvider;
   }
 
-  _loadArrayBuffer(mediaUrl) {
+  _loadArrayBuffer(sourceUrl) {
     return new Promise(resolve => {
       const xhr = new XMLHttpRequest();
-      xhr.open('GET', mediaUrl, true);
+      xhr.open('GET', sourceUrl, true);
       xhr.responseType = 'arraybuffer';
       xhr.onreadystatechange = () => {
         if (xhr.readyState === xhr.DONE) {
@@ -31,8 +31,8 @@ export class MediaLoader {
     });
   }
 
-  async loadMedia(mediaUrl) {
-    const arrayBuffer = await this._loadArrayBuffer(mediaUrl);
+  async loadMedia(sourceUrl) {
+    const arrayBuffer = await this._loadArrayBuffer(sourceUrl);
     const audioContext = await this.#audioContextProvider.waitForAudioContext();
     const audioBuffer = await this._decodeArrayBuffer(arrayBuffer, audioContext);
     return audioBuffer;

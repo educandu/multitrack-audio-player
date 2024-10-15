@@ -22,7 +22,7 @@ const DEFAULT_GAIN_PARAMS = { gain: 1, solo: false, mute: false };
 
 export class Track {
   // Mandatory fields:
-  #mediaUrl;
+  #sourceUrl;
 
   // Optional fields:
   #playbackRange;
@@ -51,7 +51,7 @@ export class Track {
   #playState;
 
   constructor({
-    mediaUrl,
+    sourceUrl,
     playbackRange = DEFAULT_PLAYBACK_RANGE,
     gainParams = DEFAULT_GAIN_PARAMS,
     autoRewind = false,
@@ -61,7 +61,7 @@ export class Track {
     onStateChanged = () => {},
     onPlayStateChanged = () => {}
   }) {
-    this.#mediaUrl = mediaUrl;
+    this.#sourceUrl = sourceUrl;
     this.#playbackRange = playbackRange;
     this.#gainParams = gainParams;
     this.#autoRewind = autoRewind;
@@ -70,7 +70,7 @@ export class Track {
     this.#audioContextProvider = audioContextProvider;
     this.#onStateChanged = onStateChanged;
     this.#onPlayStateChanged = onPlayStateChanged;
-    this.#id = this.#idGenerator.generateId(this.#mediaUrl);
+    this.#id = this.#idGenerator.generateId(this.#sourceUrl);
     this.#gain = null;
     this.#error = null;
     this.#sound = null;
@@ -94,8 +94,8 @@ export class Track {
     return this.#error;
   }
 
-  get mediaUrl() {
-    return this.#mediaUrl;
+  get sourceUrl() {
+    return this.#sourceUrl;
   }
 
   get state() {
@@ -148,7 +148,7 @@ export class Track {
   async load() {
     try {
       this.#changeState(TRACK_STATE.loading);
-      this.#buffer = await this.#mediaLoader.loadMedia(this.#mediaUrl);
+      this.#buffer = await this.#mediaLoader.loadMedia(this.#sourceUrl);
       this.#trackDuration = this.#buffer.duration;
       this.#rangeStartPositionInTrack = this.#playbackRange[0] * this.#trackDuration;
       this.#rangeEndPositionInTrack = this.#playbackRange[1] * this.#trackDuration;
