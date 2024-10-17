@@ -1,24 +1,13 @@
 import { IdGenerator } from './id-generator.js';
 import { MediaLoader } from './media-loader.js';
 import { AudioContextProvider } from './audio-context-provider.js';
-
-export const TRACK_STATE = {
-  created: 'created',
-  loading: 'loading',
-  ready: 'ready',
-  faulted: 'faulted',
-  disposed: 'disposed'
-};
-
-export const TRACK_PLAY_STATE = {
-  started: 'started',
-  pausing: 'pausing',
-  stopped: 'stopped'
-};
-
-const GAIN_DECAY_DURATION = 0.015;
-const DEFAULT_PLAYBACK_RANGE = [0, 1];
-const DEFAULT_GAIN_PARAMS = { gain: 1, solo: false, mute: false };
+import {
+  DEFAULT_GAIN_PARAMS,
+  DEFAULT_PLAYBACK_RANGE,
+  GAIN_DECAY_DURATION,
+  TRACK_PLAY_STATE,
+  TRACK_STATE
+} from './constants.js';
 
 export class Track {
   // Mandatory fields:
@@ -27,7 +16,7 @@ export class Track {
   // Optional fields:
   #playbackRange;
   #gainParams;
-  #autoRewind;
+  #masterGain;
   #idGenerator;
   #mediaLoader;
   #audioContextProvider;
@@ -36,6 +25,7 @@ export class Track {
 
   // Internally assigned fields:
   #id;
+  #name;
   #gain;
   #error;
   #sound;
@@ -52,9 +42,10 @@ export class Track {
 
   constructor({
     sourceUrl,
+    name = '',
     playbackRange = DEFAULT_PLAYBACK_RANGE,
     gainParams = DEFAULT_GAIN_PARAMS,
-    autoRewind = false,
+    masterGain = 1,
     idGenerator = new IdGenerator(),
     mediaLoader = new MediaLoader(),
     audioContextProvider = new AudioContextProvider(),
@@ -62,9 +53,10 @@ export class Track {
     onPlayStateChanged = () => {}
   }) {
     this.#sourceUrl = sourceUrl;
+    this.#name = name;
     this.#playbackRange = playbackRange;
     this.#gainParams = gainParams;
-    this.#autoRewind = autoRewind;
+    this.#masterGain = masterGain;
     this.#idGenerator = idGenerator;
     this.#mediaLoader = mediaLoader;
     this.#audioContextProvider = audioContextProvider;
@@ -88,6 +80,10 @@ export class Track {
 
   get id() {
     return this.#id;
+  }
+
+  get name() {
+    return this.#name;
   }
 
   get error() {
@@ -122,18 +118,10 @@ export class Track {
     if (this.#playState === TRACK_PLAY_STATE.started) {
       this.start(newPosition);
     } else {
-      const newPositionInTrack = newPosition + this.#rangeStartPositionInTrack;
+      const newPositionInTrack = Math.min(this.#trackDuration, newPosition + this.#rangeStartPositionInTrack);
       this.#startTime = this.#audioContext.currentTime - newPositionInTrack;
       this.#lastStopPositionInTrack = newPositionInTrack;
     }
-  }
-
-  get autoRewind() {
-    return this.#autoRewind;
-  }
-
-  set autoRewind(newAutoRewind) {
-    this.#autoRewind = newAutoRewind;
   }
 
   get gainParams() {
@@ -142,6 +130,15 @@ export class Track {
 
   set gainParams(newGainParams) {
     this.#gainParams = newGainParams;
+    this.#applyGainParams();
+  }
+
+  get masterGain() {
+    return this.#masterGain;
+  }
+
+  set masterGain(newMasterGain) {
+    this.#masterGain = newMasterGain;
     this.#applyGainParams();
   }
 
@@ -175,11 +172,8 @@ export class Track {
     }
 
     if (startPositionInTrack >= this.#rangeEndPositionInTrack) {
-      if (this.#autoRewind) {
-        startPositionInTrack = this.#rangeStartPositionInTrack;
-      } else {
-        return;
-      }
+      this.stop(true);
+      return;
     }
 
     if (this.#sound) {
@@ -207,7 +201,9 @@ export class Track {
     this.#startTime = currentTime - startPositionInTrack;
     this.#sound.start(currentTime, startPositionInTrack, remainingDurationInRange);
 
-    this.#changePlayState(TRACK_PLAY_STATE.started);
+    if (this.#playState !== TRACK_PLAY_STATE.started) {
+      this.#changePlayState(TRACK_PLAY_STATE.started);
+    }
   }
 
   pause() {
@@ -224,16 +220,14 @@ export class Track {
   }
 
   stop(moveToEnd = false) {
-    if (this.#playState === TRACK_PLAY_STATE.stopped) {
-      return;
-    }
-
     this.#sound.onended = null;
     this.#sound.stop();
     this.#lastStopPositionInTrack = moveToEnd ? this.#rangeEndPositionInTrack : this.#calculateCurrentPositionInTrack();
     this.#startTime = null;
 
-    this.#changePlayState(TRACK_PLAY_STATE.stopped);
+    if (this.#playState !== TRACK_PLAY_STATE.stopped) {
+      this.#changePlayState(TRACK_PLAY_STATE.stopped);
+    }
   }
 
   #calculateCurrentPositionInTrack() {
@@ -251,17 +245,18 @@ export class Track {
       return;
     }
 
-    const newValue = this.#gainParams.mute ? 0 : this.#gainParams.gain;
-    if (this.#gain.gain.value === newValue) {
+    const trackValue = this.#gainParams.mute ? 0 : this.#gainParams.gain;
+    const actualValue = this.#masterGain * trackValue;
+    if (this.#gain.gain.value === actualValue) {
       return;
     }
 
     if (this.#playState === TRACK_PLAY_STATE.started) {
       // To avoid ugly clicking during playback when adjusting the volume
       // we have to switch to the new volume gradually (sample by sample):
-      this.#gain.gain.setTargetAtTime(newValue, this.#audioContext.currentTime, GAIN_DECAY_DURATION);
+      this.#gain.gain.setTargetAtTime(actualValue, this.#audioContext.currentTime, GAIN_DECAY_DURATION);
     } else {
-      this.#gain.gain.value = newValue;
+      this.#gain.gain.value = actualValue;
     }
   }
 
@@ -270,12 +265,17 @@ export class Track {
     this.#error = error;
     this.#onStateChanged(newState, error);
   }
+
   #changePlayState(newPlayState) {
     this.#playState = newPlayState;
     this.#onPlayStateChanged(newPlayState);
   }
 
   dispose() {
+    if (this.#state === TRACK_STATE.disposed) {
+      return;
+    }
+
     this.stop();
 
     this.#gain = null;

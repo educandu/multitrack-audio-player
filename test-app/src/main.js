@@ -1,12 +1,18 @@
 import TrackTest from './track-test.js';
 import React, { Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
+import TrackGroupTest from './track-group-test.js';
 
 const availableTests = [
   {
     key: 'track-test',
     header: 'Track test',
     render: () => <TrackTest />
+  },
+  {
+    key: 'track-group-test',
+    header: 'Track group test',
+    render: () => <TrackGroupTest />
   }
 ];
 

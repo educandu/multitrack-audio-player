@@ -28,25 +28,25 @@ audio file.
 
 ~~~js
 // Minimal example for creating a new track:
-const track = new Track({ mediaUrl: 'https://somedomain.com/some-sound.mp3' });
+const track = new Track({ sourceUrl: 'https://somedomain.com/some-sound.mp3' });
 
 // Full example for creating a new track:
 const track = new Track({
   // Mandatory, has to be a valid URL:
-  mediaUrl: 'https://somedomain.com/some-sound.mp3',
+  sourceUrl: 'https://somedomain.com/some-sound.mp3',
+  // Optional, has no effect whatsoever. Default: ''
+  name: 'My track',
   // Optional, has to be an array of two floats between 0 and 1 that indicate
   // the range withing the media file that should be played (0 means the first sample,
   // 1 means the last sample of the sound file). Default: [0, 1]
   playbackRange = [0.25, 0.75],
   // Optional, has to be an object with three fields:
   // * `gain` (float between 0 and 1) that stands for the volume between 0% and 100%.
-  // * `solo` (boolean), this value has no effect on the playback of a single track.
   // * `mute` (boolean), if set to `true`, playback of this track will be muted.
-  // Default: { gain: 1, solo: false, mute: false }
-  gainParams = { gain: 0.5, solo: false, mute: false },
-  // Optional, will automatically start from the beginning, when `start` is called
-  // after the track has been played previously unto the very end.
-  autoRewind = true,
+  // Default: { gain: 1, mute: false }
+  gainParams = { gain: 0.5, mute: false },
+  // Optional, will be used as a factor when calculating the actual gain of the track.
+  masterGain = 1,
   // Optional, will be used to generate the track ID, can be replaced by a custom
   // implementation.
   idGenerator = new IdGenerator(),
@@ -74,7 +74,7 @@ track.dispose(); // Disposes this instance, no further calls should be made afte
 // Read-only properties:
 console.log(track.id); // The ID of this track.
 console.log(track.error); // The error in case the state of this track is 'faulted'.
-console.log(track.mediaUrl); // The url of the loaded sound file.
+console.log(track.sourceUrl); // The url of the loaded sound file.
 console.log(track.state); // The track state.
 console.log(track.playState); // The track's play state.
 console.log(track.duration); // The track's duration as a float in seconds.
@@ -82,14 +82,72 @@ console.log(track.playbackRange); // The track's playback range.
 
 // Read-write properties:
 track.position = 3.75; // Sets the track's current playback position.
-track.autoRewind = true; // Sets the track's auto-rewind behavior.
-track.gainParams = { gain: 0.5, solo: false, mute: false }; // Sets the track's gain params.
+track.gainParams = { gain: 0.5, mute: false }; // Sets the track's gain params.
 
 // Example for reading the current time code:
 setInterval(() => console.log(track.position), 100);
 
 // Example for changing the volume to 50%:
 track.gainParams = { ...track.gainParams, gain: 0.5 };
+~~~
+
+#### TrackGroup
+
+The `TrackGroup` class wraps a collection of tracks while providing an API (mostly) identical
+to a single track. It manages state, play state and volume coordination between the tracks,
+including solo state. It also adds an option for automatic rewinding.
+
+~~~js
+// Example for creating a new track group:
+const trackGroup = new TrackState({
+  // Mandatory, the track configuration
+  trackConfiguration: {
+    // Tracks with their initial configuration
+    tracks: [
+      {
+        name: 'First track',
+        sourceUrl: 'https://somedomain.com/some-sound.mp3',
+        playbackRange: [0, 1],
+        gainParams: { gain: 0.5, mute: false }
+      },
+      {
+        name: 'Second track',
+        sourceUrl: 'https://somedomain.com/some-other-sound.mp3',
+        playbackRange: [0, 1],
+        gainParams: { gain: 0.75, mute: false }
+      },
+    ],
+    // Determines, which track should play solo initially (-1 for none)
+    soloTrackIndex: -1
+  },
+  // Optional, will automatically start from the beginning, when `start` is called
+  // after the track has been played previously unto the very end. Default: false
+  autoRewind: true,
+  // Optional, has to be an object with three fields:
+  // * `gain` (float between 0 and 1) that stands for the volume between 0% and 100%.
+  // * `mute` (boolean), if set to `true`, playback of this track will be muted.
+  // Default: { gain: 1, mute: false }
+  gainParams = { gain: 0.5, mute: false },
+  // Optional, will be used to generate the individual track IDs, can be replaced by
+  // a custom implementation.
+  idGenerator = new IdGenerator(),
+  // Optional, will be used to download and decode the audio files, can be replaced
+  // by a custom implementation.
+  mediaLoader = new MediaLoader(),
+  // Optional, will be used to retrieve an `AudioContext` that is ready to be used,
+  // can be replaced by a custom implementation.
+  audioContextProvider = new AudioContextProvider(),
+  // Optional, will be called each time the track group's `state` property has changed.
+  onStateChanged = (state, error) => { console.log(error ?? state); },
+  // Optional, will be called each time the track group's `playState` property has changed.
+  onPlayStateChanged = playState => { console.log(playState); }
+});
+
+// Example for changing the volume to 50% in the second track:
+trackGroup.tracks[1].gainParams = { ...track.gainParams, gain: 0.5 };
+
+// Example for setting the second track as the solo track:
+trackGroup.soloTrackIndex = 1;
 ~~~
 
 ---

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 
-export default function TrackPanel({ track }) {
+export default function TrackPanel({ track, solo = false, onSoloChange = null, showSolo = false, showActions = false }) {
   return (
     <div className="Panel">
       <h2>Track</h2>
@@ -9,6 +9,10 @@ export default function TrackPanel({ track }) {
           <tr>
             <th>id</th>
             <td><div>{track.id}</div></td>
+          </tr>
+          <tr>
+            <th>name</th>
+            <td><div>{track.name}</div></td>
           </tr>
           <tr>
             <th>sourceUrl</th>
@@ -27,6 +31,24 @@ export default function TrackPanel({ track }) {
             <td><div>{track.duration}</div></td>
           </tr>
           <tr>
+            <th>masterGain</th>
+            <td>
+              <div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="any"
+                  value={track.masterGain}
+                  onChange={event => { track.masterGain = Number(event.target.value); }}
+                  />
+                &nbsp;
+                &nbsp;
+                <span>{track.masterGain}</span>
+              </div>
+            </td>
+          </tr>
+          <tr>
             <th>gainParams</th>
             <td>
               <div>
@@ -38,15 +60,6 @@ export default function TrackPanel({ track }) {
                   value={track.gainParams.gain}
                   onChange={event => { track.gainParams = { ...track.gainParams, gain: Number(event.target.value) }; }}
                   />
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={track.gainParams.solo}
-                    onChange={event => { track.gainParams = { ...track.gainParams, solo: event.target.checked }; }}
-                    />
-                  &nbsp;
-                  <span>SOLO</span>
-                </label>
                 &nbsp;
                 <label>
                   <input
@@ -57,9 +70,23 @@ export default function TrackPanel({ track }) {
                   &nbsp;
                   <span>MUTE</span>
                 </label>
+                {!!showSolo && (
+                  <Fragment>
+                    &nbsp;
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={solo}
+                        onChange={event => onSoloChange?.(event.target.checked)}
+                        />
+                      &nbsp;
+                      <span>SOLO</span>
+                    </label>
+                  </Fragment>
+                )}
                 &nbsp;
                 &nbsp;
-                <span data-label="track-gainParams">{JSON.stringify(track.gainParams)}</span>
+                <span>{track.gainParams.gain}</span>
               </div>
             </td>
           </tr>
@@ -82,32 +109,22 @@ export default function TrackPanel({ track }) {
             </td>
           </tr>
           <tr>
-            <th>autoRewind</th>
-            <td>
-              <div>
-                <input
-                  type="checkbox"
-                  checked={track.autoRewind}
-                  onChange={event => { track.autoRewind = event.target.checked; }}
-                  />
-              </div>
-            </td>
-          </tr>
-          <tr>
             <th>error</th>
             <td><div>{track.error?.toString() || ''}</div></td>
           </tr>
-          <tr>
-            <th>ACTIONS</th>
-            <td>
-              <div>
-                <button type="button" onClick={() => track.load()}>Load</button>
-                <button type="button" onClick={() => track.start()}>Start</button>
-                <button type="button" onClick={() => track.pause()}>Pause</button>
-                <button type="button" onClick={() => track.stop()}>Stop</button>
-              </div>
-            </td>
-          </tr>
+          {!!showActions && (
+            <tr>
+              <th>ACTIONS</th>
+              <td>
+                <div>
+                  <button type="button" onClick={() => track.load()}>Load</button>
+                  <button type="button" onClick={() => track.start()}>Start</button>
+                  <button type="button" onClick={() => track.pause()}>Pause</button>
+                  <button type="button" onClick={() => track.stop()}>Stop</button>
+                </div>
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

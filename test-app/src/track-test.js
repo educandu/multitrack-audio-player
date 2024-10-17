@@ -18,7 +18,7 @@ export default function TrackTest() {
   return (
     <Fragment>
       <AudioContextPanel />
-      {!!currentTrack && <TrackPanel track={currentTrack} />}
+      {!!currentTrack && <TrackPanel track={currentTrack} showActions />}
       <div style={{ marginTop: '20px' }}>
         <button type="button" onClick={handleCreateTrackClick}>Create</button>
       </div>
