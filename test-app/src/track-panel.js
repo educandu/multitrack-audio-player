@@ -7,14 +7,6 @@ export default function TrackPanel({ track, solo = false, onSoloChange = null, s
       <table>
         <tbody>
           <tr>
-            <th>id</th>
-            <td><div>{track.id}</div></td>
-          </tr>
-          <tr>
-            <th>name</th>
-            <td><div>{track.name}</div></td>
-          </tr>
-          <tr>
             <th>sourceUrl</th>
             <td><div>{track.sourceUrl}</div></td>
           </tr>
@@ -107,6 +99,10 @@ export default function TrackPanel({ track, solo = false, onSoloChange = null, s
                 <span>{track.position}</span>
               </div>
             </td>
+          </tr>
+          <tr>
+            <th>customProps</th>
+            <td><div>{JSON.stringify(track.customProps)}</div></td>
           </tr>
           <tr>
             <th>error</th>

@@ -72,7 +72,7 @@ export default function MultitrackAudioPlayerTest() {
       {!!currentPlayer && <MultitrackAudioPlayerPanel player={currentPlayer} />}
       {currentPlayer?.tracks.map((track, trackIndex) => (
         <TrackPanel
-          key={track.id}
+          key={track.customProps.key}
           track={track}
           showSolo
           solo={currentPlayer.soloTrackIndex === trackIndex}

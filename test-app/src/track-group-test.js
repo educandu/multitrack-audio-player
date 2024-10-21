@@ -26,7 +26,7 @@ export default function TrackGroupTest() {
       {!!currentTrackGroup && <TrackGroupPanel trackGroup={currentTrackGroup} />}
       {currentTrackGroup?.tracks.map((track, trackIndex) => (
         <TrackPanel
-          key={track.id}
+          key={track.customProps.key}
           track={track}
           showSolo
           solo={currentTrackGroup.soloTrackIndex === trackIndex}

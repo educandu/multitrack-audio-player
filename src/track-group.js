@@ -1,5 +1,4 @@
 import { Track } from './track.js';
-import { IdGenerator } from './id-generator.js';
 import { MediaDecoder } from './media-decoder.js';
 import { MediaDownloader } from './media-downloader.js';
 import { AudioContextProvider } from './audio-context-provider.js';
@@ -17,7 +16,6 @@ export class TrackGroup {
   #onPlayStateChanged;
 
   // Internally assigned fields:
-  #id;
   #tracks;
   #state;
   #playState;
@@ -28,14 +26,12 @@ export class TrackGroup {
     trackConfiguration,
     autoRewind = false,
     gainParams = DEFAULT_GAIN_PARAMS,
-    idGenerator = new IdGenerator(),
     mediaDecoder = new MediaDecoder(),
     mediaDownloader = new MediaDownloader(),
     audioContextProvider = new AudioContextProvider(),
     onStateChanged = () => {},
     onPlayStateChanged = () => {}
   }) {
-    this.#id = idGenerator.generateId();
     this.#trackConfiguration = trackConfiguration;
     this.#autoRewind = autoRewind;
     this.#gainParams = gainParams;
@@ -47,12 +43,8 @@ export class TrackGroup {
     this.#onPlayStateChanged = onPlayStateChanged;
 
     this.#tracks = trackConfiguration.tracks.map(config => new Track({
-      name: config.name,
-      sourceUrl: config.sourceUrl,
-      playbackRange: config.playbackRange,
-      gainParams: config.gainParams,
+      ...config,
       autoRewind: false,
-      idGenerator,
       mediaDecoder,
       mediaDownloader,
       audioContextProvider,
@@ -65,10 +57,6 @@ export class TrackGroup {
     // This will ensure all tracks have the correct initial gainParams,
     // as we do not set the value when calling the track constructor above:
     this.#applyGainParams();
-  }
-
-  get id() {
-    return this.#id;
   }
 
   get error() {

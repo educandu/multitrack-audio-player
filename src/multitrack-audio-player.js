@@ -1,13 +1,11 @@
 import { Clock } from './clock.js';
 import { TrackGroup } from './track-group.js';
-import { IdGenerator } from './id-generator.js';
 import { MediaDecoder } from './media-decoder.js';
 import { MediaDownloader } from './media-downloader.js';
 import { AudioContextProvider } from './audio-context-provider.js';
 import { DEFAULT_GAIN_PARAMS, IS_BROWSER, TRACK_PLAY_STATE, TRACK_STATE } from './constants.js';
 
 export class MultitrackAudioPlayer {
-  #id;
   #clock;
   #trackGroup;
   #onStateChanged;
@@ -20,7 +18,6 @@ export class MultitrackAudioPlayer {
     autoLoad = false,
     autoRewind = false,
     gainParams = DEFAULT_GAIN_PARAMS,
-    idGenerator = new IdGenerator(),
     mediaDecoder = new MediaDecoder(),
     mediaDownloader = new MediaDownloader(),
     audioContextProvider = new AudioContextProvider(),
@@ -28,7 +25,6 @@ export class MultitrackAudioPlayer {
     onPlayStateChanged = () => {},
     onPositionChanged = () => {}
   }) {
-    this.#id = idGenerator.generateId();
     this.#clock = new Clock({ onTick: () => this.#handleClockTick() });
     this.#onStateChanged = onStateChanged;
     this.#onPlayStateChanged = onPlayStateChanged;
@@ -38,7 +34,6 @@ export class MultitrackAudioPlayer {
       trackConfiguration,
       autoRewind,
       gainParams,
-      idGenerator,
       mediaDecoder,
       mediaDownloader,
       audioContextProvider,
@@ -51,10 +46,6 @@ export class MultitrackAudioPlayer {
     if (autoLoad && IS_BROWSER) {
       this.load();
     }
-  }
-
-  get id() {
-    return this.#id;
   }
 
   get error() {

@@ -1,4 +1,3 @@
-import { IdGenerator } from './id-generator.js';
 import { MediaDecoder } from './media-decoder.js';
 import { MediaDownloader } from './media-downloader.js';
 import { GlobalMediaQueue } from './global-media-queue.js';
@@ -18,8 +17,8 @@ export class Track {
   // Optional fields:
   #playbackRange;
   #gainParams;
+  #customProps;
   #masterGain;
-  #idGenerator;
   #mediaDecoder;
   #mediaDownloader;
   #audioContextProvider;
@@ -27,8 +26,6 @@ export class Track {
   #onPlayStateChanged;
 
   // Internally assigned fields:
-  #id;
-  #name;
   #gain;
   #error;
   #sound;
@@ -45,11 +42,10 @@ export class Track {
 
   constructor({
     sourceUrl,
-    name = '',
     playbackRange = DEFAULT_PLAYBACK_RANGE,
     gainParams = DEFAULT_GAIN_PARAMS,
+    customProps = {},
     masterGain = 1,
-    idGenerator = new IdGenerator(),
     mediaDecoder = new MediaDecoder(),
     mediaDownloader = new MediaDownloader(),
     audioContextProvider = new AudioContextProvider(),
@@ -57,17 +53,15 @@ export class Track {
     onPlayStateChanged = () => {}
   }) {
     this.#sourceUrl = sourceUrl;
-    this.#name = name;
     this.#playbackRange = playbackRange;
     this.#gainParams = gainParams;
+    this.#customProps = customProps;
     this.#masterGain = masterGain;
-    this.#idGenerator = idGenerator;
     this.#mediaDecoder = mediaDecoder;
     this.#mediaDownloader = mediaDownloader;
     this.#audioContextProvider = audioContextProvider;
     this.#onStateChanged = onStateChanged;
     this.#onPlayStateChanged = onPlayStateChanged;
-    this.#id = this.#idGenerator.generateId(this.#sourceUrl);
     this.#gain = null;
     this.#error = null;
     this.#sound = null;
@@ -83,12 +77,8 @@ export class Track {
     this.#playState = TRACK_PLAY_STATE.stopped;
   }
 
-  get id() {
-    return this.#id;
-  }
-
-  get name() {
-    return this.#name;
+  get customProps() {
+    return this.#customProps;
   }
 
   get error() {
@@ -311,7 +301,6 @@ export class Track {
     this.#lastStopPositionInTrack = null;
     this.#state = TRACK_STATE.disposed;
     this.#playState = TRACK_PLAY_STATE.stopped;
-    this.#idGenerator = null;
     this.#mediaDecoder = null;
     this.#mediaDownloader = null;
     this.#audioContextProvider = null;
