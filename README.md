@@ -19,6 +19,10 @@ $ yarn add @educandu/multitrack-audio-player
 
 ## Usage
 
+~~~js
+import { MultitrackAudioPlayer, TrackGroup, Track, ... } from '@educandu/multitrack-audio-player';
+~~~
+
 ### Low level API
 
 #### Track
@@ -34,25 +38,25 @@ const track = new Track({ sourceUrl: 'https://somedomain.com/some-sound.mp3' });
 const track = new Track({
   // Mandatory, has to be a valid URL:
   sourceUrl: 'https://somedomain.com/some-sound.mp3',
-  // Optional, has no effect whatsoever. Default: ''
-  name: 'My track',
   // Optional, has to be an array of two floats between 0 and 1 that indicate
   // the range withing the media file that should be played (0 means the first sample,
   // 1 means the last sample of the sound file). Default: [0, 1]
   playbackRange = [0.25, 0.75],
-  // Optional, has to be an object with three fields:
+  // Optional, has to be an object with two fields:
   // * `gain` (float between 0 and 1) that stands for the volume between 0% and 100%.
   // * `mute` (boolean), if set to `true`, playback of this track will be muted.
   // Default: { gain: 1, mute: false }
   gainParams = { gain: 0.5, mute: false },
   // Optional, will be used as a factor when calculating the actual gain of the track.
   masterGain = 1,
-  // Optional, will be used to generate the track ID, can be replaced by a custom
-  // implementation.
-  idGenerator = new IdGenerator(),
-  // Optional, will be used to download and decode the audio file, can be replaced
+  // Optional, can be used to associate custom data with individual tracks. Default: {}
+  customProps: { key: 'some-key', name: 'My track', usage: 'internal' },
+  // Optional, will be used to decode the audio file, can be replaced
   // by a custom implementation.
-  mediaLoader = new MediaLoader(),
+  mediaDecoder = new MediaDecoder(),
+  // Optional, will be used to download the audio file, can be replaced
+  // by a custom implementation.
+  mediaDownloader = new MediaDownloader(),
   // Optional, will be used to retrieve an `AudioContext` that is ready to be used,
   // can be replaced by a custom implementation.
   audioContextProvider = new AudioContextProvider(),
@@ -72,7 +76,7 @@ track.stop(true); // Stops the track and moves to the very end of the media.
 track.dispose(); // Disposes this instance, no further calls should be made after this.
 
 // Read-only properties:
-console.log(track.id); // The ID of this track.
+console.log(track.customProps); // Any custom data associated with this track.
 console.log(track.error); // The error in case the state of this track is 'faulted'.
 console.log(track.sourceUrl); // The url of the loaded sound file.
 console.log(track.state); // The track state.
@@ -83,6 +87,7 @@ console.log(track.playbackRange); // The track's playback range.
 // Read-write properties:
 track.position = 3.75; // Sets the track's current playback position.
 track.gainParams = { gain: 0.5, mute: false }; // Sets the track's gain params.
+track.masterGain = 1; // Sets the track's master gain.
 
 // Example for reading the current time code:
 setInterval(() => console.log(track.position), 100);
@@ -105,16 +110,16 @@ const trackGroup = new TrackState({
     // Tracks with their initial configuration
     tracks: [
       {
-        name: 'First track',
         sourceUrl: 'https://somedomain.com/some-sound.mp3',
         playbackRange: [0, 1],
-        gainParams: { gain: 0.5, mute: false }
+        gainParams: { gain: 0.5, mute: false },
+        customProps: { name: 'First track' }
       },
       {
-        name: 'Second track',
         sourceUrl: 'https://somedomain.com/some-other-sound.mp3',
         playbackRange: [0, 1],
-        gainParams: { gain: 0.75, mute: false }
+        gainParams: { gain: 0.75, mute: false },
+        customProps: { name: 'Second track' }
       },
     ],
     // Determines, which track should play solo initially (-1 for none)
@@ -123,17 +128,17 @@ const trackGroup = new TrackState({
   // Optional, will automatically start from the beginning, when `start` is called
   // after the track has been played previously unto the very end. Default: false
   autoRewind: true,
-  // Optional, has to be an object with three fields:
+  // Optional, has to be an object with two fields:
   // * `gain` (float between 0 and 1) that stands for the volume between 0% and 100%.
   // * `mute` (boolean), if set to `true`, playback of this track will be muted.
   // Default: { gain: 1, mute: false }
   gainParams = { gain: 0.5, mute: false },
-  // Optional, will be used to generate the individual track IDs, can be replaced by
-  // a custom implementation.
-  idGenerator = new IdGenerator(),
-  // Optional, will be used to download and decode the audio files, can be replaced
+  // Optional, will be used to decode the audio file, can be replaced
   // by a custom implementation.
-  mediaLoader = new MediaLoader(),
+  mediaDecoder = new MediaDecoder(),
+  // Optional, will be used to download the audio file, can be replaced
+  // by a custom implementation.
+  mediaDownloader = new MediaDownloader(),
   // Optional, will be used to retrieve an `AudioContext` that is ready to be used,
   // can be replaced by a custom implementation.
   audioContextProvider = new AudioContextProvider(),
@@ -148,6 +153,93 @@ trackGroup.tracks[1].gainParams = { ...track.gainParams, gain: 0.5 };
 
 // Example for setting the second track as the solo track:
 trackGroup.soloTrackIndex = 1;
+~~~
+
+### High level API
+
+#### MultitrackAudioPlayer
+
+The `MultitrackAudioPlayer` class wraps a `TrackGroup` and adds a clock with change notifications
+on the current playback position as well as an option for automatic loading on top.
+In most cases this is the API that should be used by consumers of this library.
+
+~~~js
+// Example for creating a new player:
+const player = new MultitrackAudioPlayer({
+  // Mandatory, the track configuration
+  trackConfiguration: {
+    // Tracks with their initial configuration
+    tracks: [
+      {
+        sourceUrl: 'https://somedomain.com/some-sound.mp3',
+        playbackRange: [0, 1],
+        gainParams: { gain: 0.5, mute: false },
+        customProps: { name: 'First track' }
+      },
+      {
+        sourceUrl: 'https://somedomain.com/some-other-sound.mp3',
+        playbackRange: [0, 1],
+        gainParams: { gain: 0.75, mute: false },
+        customProps: { name: 'Second track' }
+      },
+    ],
+    // Determines, which track should play solo initially (-1 for none)
+    soloTrackIndex: -1
+  },
+  // Optional, will immediately start loading the tracks, without explicit
+  // call to the `load` function. Consumers nevertheless have to wait until the
+  // `state` changes to `ready` before starting playback.
+  autoLoad: true,
+  // Optional, will automatically start from the beginning, when `start` is called
+  // after the track has been played previously unto the very end. Default: false
+  autoRewind: true,
+  // Optional, has to be an object with two fields:
+  // * `gain` (float between 0 and 1) that stands for the volume between 0% and 100%.
+  // * `mute` (boolean), if set to `true`, playback of this track will be muted.
+  // Default: { gain: 1, mute: false }
+  gainParams = { gain: 0.5, mute: false },
+  // Optional, will be used to decode the audio file, can be replaced
+  // by a custom implementation.
+  mediaDecoder = new MediaDecoder(),
+  // Optional, will be used to download the audio file, can be replaced
+  // by a custom implementation.
+  mediaDownloader = new MediaDownloader(),
+  // Optional, will be used to retrieve an `AudioContext` that is ready to be used,
+  // can be replaced by a custom implementation.
+  audioContextProvider = new AudioContextProvider(),
+  // Optional, will be called each time the track group's `state` property has changed.
+  onStateChanged = (state, error) => { console.log(error ?? state); },
+  // Optional, will be called each time the track group's `playState` property has changed.
+  onPlayStateChanged = playState => { console.log(playState); },
+  // Optional, will be called each time the current `position` property has changed.
+  onPositionChanged = position => { console.log(position); },
+});
+
+// Example for changing the volume to 50% in the second track:
+player.tracks[1].gainParams = { ...track.gainParams, gain: 0.5 };
+
+// Example for setting the second track as the solo track:
+player.soloTrackIndex = 1;
+
+// See the `Track` class for methods and properties
+~~~
+
+### Concurrency
+
+As downloading and decoding multiple media files can get pretty resource-intensive
+(and therefore can even lead to browser craches), there is some concurrency control
+built into this library that ensures that only a certain number of files can be
+processed (downloaded/decoded) at the same time. In order to changes these global settings,
+you can use the `GlobalMediaQueue` object:
+
+~~~js
+// Only allow 5 parallel downloads (default: 2)
+GlobalMediaQueue.maxDownloadConcurrency = 5;
+// Only allow 5 parallel decoding processes (default: 2)
+GlobalMediaQueue.maxDecodingConcurrency = 5;
+// Only allow 5 media files to be processed (i.e. downloaded AND decoded)
+// at the same time (default: 2)
+GlobalMediaQueue.maxMediaSourceConcurrency = 5;
 ~~~
 
 ---

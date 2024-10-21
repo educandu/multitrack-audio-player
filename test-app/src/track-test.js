@@ -11,7 +11,7 @@ export default function TrackTest() {
 
   const handleCreateTrackClick = () => {
     const oldTrack = currentTrack;
-    setCurrentTrack(new Track({ sourceUrl: EXAMPLE_TUTTI_TRACK.sourceUrl, playbackRange: [0.25, 0.75] }));
+    setCurrentTrack(new Track({ ...EXAMPLE_TUTTI_TRACK, playbackRange: [0.25, 0.75] }));
     setTimeout(() => oldTrack?.dispose(), 0);
   };
 

@@ -139,8 +139,8 @@ export class MultitrackAudioPlayer {
     return this.#trackGroup.load();
   }
 
-  start() {
-    this.#trackGroup.start();
+  start(position = null) {
+    this.#trackGroup.start(position);
     this.#clock.start(true);
   }
 
@@ -149,8 +149,8 @@ export class MultitrackAudioPlayer {
     this.#clock.stop(true);
   }
 
-  stop() {
-    this.#trackGroup.stop();
+  stop(moveToEnd = false) {
+    this.#trackGroup.stop(moveToEnd);
     this.#clock.stop(true);
   }
 
