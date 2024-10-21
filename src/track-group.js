@@ -207,8 +207,6 @@ export class TrackGroup {
       return;
     }
 
-    this.stop();
-
     for (const track of this.#tracks) {
       track.dispose();
     }

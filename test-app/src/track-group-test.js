@@ -29,7 +29,7 @@ export default function TrackGroupTest() {
           key={track.id}
           track={track}
           showSolo
-          solo={currentTrackGroup?.soloTrackIndex === trackIndex}
+          solo={currentTrackGroup.soloTrackIndex === trackIndex}
           onSoloChange={isSolo => handleSoloChange(trackIndex, isSolo)}
           />
       ))}

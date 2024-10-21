@@ -145,15 +145,25 @@ export class Track {
   async load() {
     try {
       this.#changeState(TRACK_STATE.loading);
-      this.#buffer = await this.#mediaLoader.loadMedia(this.#sourceUrl);
+      const buffer = await this.#mediaLoader.loadMedia(this.#sourceUrl);
+      if (this.#state === TRACK_STATE.disposed) {
+        return;
+      }
+      this.#buffer = buffer;
       this.#trackDuration = this.#buffer.duration;
       this.#rangeStartPositionInTrack = this.#playbackRange[0] * this.#trackDuration;
       this.#rangeEndPositionInTrack = this.#playbackRange[1] * this.#trackDuration;
       this.#rangeDuration = this.#rangeEndPositionInTrack - this.#rangeStartPositionInTrack;
-      this.#audioContext = await this.#audioContextProvider.waitForAudioContext();
+      const audioContext = await this.#audioContextProvider.waitForAudioContext();
+      if (this.#state === TRACK_STATE.disposed) {
+        return;
+      }
+      this.#audioContext = audioContext;
       this.#changeState(TRACK_STATE.ready);
     } catch (error) {
-      this.#changeState(TRACK_STATE.faulted, error);
+      if (this.#state !== TRACK_STATE.disposed) {
+        this.#changeState(TRACK_STATE.faulted, error);
+      }
     }
   }
 
@@ -276,7 +286,10 @@ export class Track {
       return;
     }
 
-    this.stop();
+    if (this.#sound) {
+      this.#sound.onended = null;
+      this.#sound.stop();
+    }
 
     this.#gain = null;
     this.#error = null;

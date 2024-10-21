@@ -2,6 +2,7 @@ import TrackTest from './track-test.js';
 import React, { Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
 import TrackGroupTest from './track-group-test.js';
+import MultitrackAudioPlayerTest from './multitrack-audio-player-test.js';
 
 const availableTests = [
   {
@@ -13,6 +14,11 @@ const availableTests = [
     key: 'track-group-test',
     header: 'Track group test',
     render: () => <TrackGroupTest />
+  },
+  {
+    key: 'multitrack-audio-player-test',
+    header: 'Multitrack audio player test',
+    render: () => <MultitrackAudioPlayerTest />
   }
 ];
 

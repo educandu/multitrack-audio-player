@@ -12,21 +12,13 @@ export class MediaLoader {
     this.#queue = new PQueue({ concurrency: MAX_CONCURRENCY });
   }
 
-  _loadArrayBuffer(sourceUrl) {
-    return new Promise(resolve => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', sourceUrl, true);
-      xhr.responseType = 'arraybuffer';
-      xhr.onreadystatechange = () => {
-        if (xhr.readyState === xhr.DONE) {
-          resolve(xhr.response);
-        }
-      };
-      xhr.send();
-    });
+  async #loadArrayBuffer(sourceUrl) {
+    const response = await fetch(sourceUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    return arrayBuffer;
   }
 
-  _decodeArrayBuffer(arrayBuffer, audioContext) {
+  #decodeArrayBuffer(arrayBuffer, audioContext) {
     return new Promise((resolve, reject) => {
       audioContext.decodeAudioData(
         arrayBuffer,
@@ -38,9 +30,9 @@ export class MediaLoader {
 
   loadMedia(sourceUrl) {
     return this.#queue.add(async () => {
-      const arrayBuffer = await this._loadArrayBuffer(sourceUrl);
+      const arrayBuffer = await this.#loadArrayBuffer(sourceUrl);
       const audioContext = await this.#audioContextProvider.waitForAudioContext();
-      const audioBuffer = await this._decodeArrayBuffer(arrayBuffer, audioContext);
+      const audioBuffer = await this.#decodeArrayBuffer(arrayBuffer, audioContext);
       return audioBuffer;
     });
   }

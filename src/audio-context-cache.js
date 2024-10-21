@@ -1,3 +1,4 @@
+import { IS_BROWSER } from './constants.js';
 import { AudioContext as StandardizedAudioContext } from 'standardized-audio-context';
 
 class ServerAudioContextCache {
@@ -113,7 +114,7 @@ export class AudioContextCache {
   #innerCache;
 
   constructor() {
-    this.#innerCache = typeof window === 'object' && typeof document === 'object' && document.nodeType === 9
+    this.#innerCache = IS_BROWSER
       ? new BrowserAudioContextCache()
       : new ServerAudioContextCache();
   }
