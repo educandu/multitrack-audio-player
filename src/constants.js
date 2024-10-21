@@ -14,6 +14,8 @@ export const TRACK_PLAY_STATE = {
 
 export const GAIN_DECAY_DURATION = 0.015;
 
+export const DEFAULT_MAX_CONCURRENCY = 2;
+
 export const DEFAULT_PLAYBACK_RANGE = [0, 1];
 
 export const DEFAULT_GAIN_PARAMS = { gain: 1, mute: false };

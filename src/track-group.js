@@ -1,6 +1,7 @@
 import { Track } from './track.js';
 import { IdGenerator } from './id-generator.js';
-import { MediaLoader } from './media-loader.js';
+import { MediaDecoder } from './media-decoder.js';
+import { MediaDownloader } from './media-downloader.js';
 import { AudioContextProvider } from './audio-context-provider.js';
 import { DEFAULT_GAIN_PARAMS, TRACK_PLAY_STATE, TRACK_STATE } from './constants.js';
 
@@ -28,7 +29,8 @@ export class TrackGroup {
     autoRewind = false,
     gainParams = DEFAULT_GAIN_PARAMS,
     idGenerator = new IdGenerator(),
-    mediaLoader = new MediaLoader(),
+    mediaDecoder = new MediaDecoder(),
+    mediaDownloader = new MediaDownloader(),
     audioContextProvider = new AudioContextProvider(),
     onStateChanged = () => {},
     onPlayStateChanged = () => {}
@@ -51,7 +53,8 @@ export class TrackGroup {
       gainParams: config.gainParams,
       autoRewind: false,
       idGenerator,
-      mediaLoader,
+      mediaDecoder,
+      mediaDownloader,
       audioContextProvider,
       onStateChanged: () => this.#handleTrackStateChanged(),
       onPlayStateChanged: () => this.#handleTrackPlayStateChanged(),

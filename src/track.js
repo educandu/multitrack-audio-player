@@ -1,5 +1,7 @@
 import { IdGenerator } from './id-generator.js';
-import { MediaLoader } from './media-loader.js';
+import { MediaDecoder } from './media-decoder.js';
+import { MediaDownloader } from './media-downloader.js';
+import { GlobalMediaQueue } from './global-media-queue.js';
 import { AudioContextProvider } from './audio-context-provider.js';
 import {
   DEFAULT_GAIN_PARAMS,
@@ -18,7 +20,8 @@ export class Track {
   #gainParams;
   #masterGain;
   #idGenerator;
-  #mediaLoader;
+  #mediaDecoder;
+  #mediaDownloader;
   #audioContextProvider;
   #onStateChanged;
   #onPlayStateChanged;
@@ -47,7 +50,8 @@ export class Track {
     gainParams = DEFAULT_GAIN_PARAMS,
     masterGain = 1,
     idGenerator = new IdGenerator(),
-    mediaLoader = new MediaLoader(),
+    mediaDecoder = new MediaDecoder(),
+    mediaDownloader = new MediaDownloader(),
     audioContextProvider = new AudioContextProvider(),
     onStateChanged = () => {},
     onPlayStateChanged = () => {}
@@ -58,7 +62,8 @@ export class Track {
     this.#gainParams = gainParams;
     this.#masterGain = masterGain;
     this.#idGenerator = idGenerator;
-    this.#mediaLoader = mediaLoader;
+    this.#mediaDecoder = mediaDecoder;
+    this.#mediaDownloader = mediaDownloader;
     this.#audioContextProvider = audioContextProvider;
     this.#onStateChanged = onStateChanged;
     this.#onPlayStateChanged = onPlayStateChanged;
@@ -145,7 +150,12 @@ export class Track {
   async load() {
     try {
       this.#changeState(TRACK_STATE.loading);
-      const buffer = await this.#mediaLoader.loadMedia(this.#sourceUrl);
+      const buffer = await GlobalMediaQueue.downloadAndDecodeMedia({
+        sourceUrl: this.#sourceUrl,
+        mediaDecoder: this.#mediaDecoder,
+        mediaDownloader: this.#mediaDownloader,
+        audioContextProvider: this.#audioContextProvider
+      });
       if (this.#state === TRACK_STATE.disposed) {
         return;
       }
@@ -295,14 +305,16 @@ export class Track {
     this.#error = null;
     this.#sound = null;
     this.#buffer = null;
+    this.#audioContext = null;
     this.#trackDuration = null;
     this.#startTime = null;
     this.#lastStopPositionInTrack = null;
     this.#state = TRACK_STATE.disposed;
     this.#playState = TRACK_PLAY_STATE.stopped;
     this.#idGenerator = null;
-    this.#mediaLoader = null;
-    this.#audioContext = null;
+    this.#mediaDecoder = null;
+    this.#mediaDownloader = null;
+    this.#audioContextProvider = null;
     this.#onStateChanged = null;
     this.#onPlayStateChanged = null;
   }

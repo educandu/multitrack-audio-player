@@ -1,9 +1,10 @@
+import { Clock } from './clock.js';
 import { TrackGroup } from './track-group.js';
 import { IdGenerator } from './id-generator.js';
-import { MediaLoader } from './media-loader.js';
-import { DEFAULT_GAIN_PARAMS, IS_BROWSER, TRACK_PLAY_STATE, TRACK_STATE } from './constants.js';
+import { MediaDecoder } from './media-decoder.js';
+import { MediaDownloader } from './media-downloader.js';
 import { AudioContextProvider } from './audio-context-provider.js';
-import { Clock } from './clock.js';
+import { DEFAULT_GAIN_PARAMS, IS_BROWSER, TRACK_PLAY_STATE, TRACK_STATE } from './constants.js';
 
 export class MultitrackAudioPlayer {
   #id;
@@ -20,7 +21,8 @@ export class MultitrackAudioPlayer {
     autoRewind = false,
     gainParams = DEFAULT_GAIN_PARAMS,
     idGenerator = new IdGenerator(),
-    mediaLoader = new MediaLoader(),
+    mediaDecoder = new MediaDecoder(),
+    mediaDownloader = new MediaDownloader(),
     audioContextProvider = new AudioContextProvider(),
     onStateChanged = () => {},
     onPlayStateChanged = () => {},
@@ -37,7 +39,8 @@ export class MultitrackAudioPlayer {
       autoRewind,
       gainParams,
       idGenerator,
-      mediaLoader,
+      mediaDecoder,
+      mediaDownloader,
       audioContextProvider,
       onStateChanged: (newState, error) => this.#handleTrackGroupStateChanged(newState, error),
       onPlayStateChanged: newPlayState => this.#handleTrackGroupPlayStateChanged(newPlayState)
