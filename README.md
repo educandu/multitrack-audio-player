@@ -104,7 +104,7 @@ including solo state. It also adds an option for automatic rewinding.
 
 ~~~js
 // Example for creating a new track group:
-const trackGroup = new TrackState({
+const trackGroup = new TrackGroup({
   // Mandatory, the track configuration
   trackConfiguration: {
     // Tracks with their initial configuration
