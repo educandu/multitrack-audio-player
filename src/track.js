@@ -2,13 +2,7 @@ import { MediaDecoder } from './media-decoder.js';
 import { MediaDownloader } from './media-downloader.js';
 import { GlobalMediaQueue } from './global-media-queue.js';
 import { AudioContextProvider } from './audio-context-provider.js';
-import {
-  DEFAULT_GAIN_PARAMS,
-  DEFAULT_PLAYBACK_RANGE,
-  GAIN_DECAY_DURATION,
-  TRACK_PLAY_STATE,
-  TRACK_STATE
-} from './constants.js';
+import { DEFAULT_GAIN_PARAMS, DEFAULT_PLAYBACK_RANGE, GAIN_DECAY_DURATION, PLAY_STATE, STATE } from './constants.js';
 
 export class Track {
   // Mandatory fields:
@@ -73,8 +67,8 @@ export class Track {
     this.#lastStopPositionInTrack = null;
     this.#rangeEndPositionInTrack = null;
     this.#rangeStartPositionInTrack = null;
-    this.#state = TRACK_STATE.created;
-    this.#playState = TRACK_PLAY_STATE.stopped;
+    this.#state = STATE.created;
+    this.#playState = PLAY_STATE.stopped;
   }
 
   get customProps() {
@@ -110,7 +104,7 @@ export class Track {
   }
 
   set position(newPosition) {
-    if (this.#playState === TRACK_PLAY_STATE.started) {
+    if (this.#playState === PLAY_STATE.started) {
       this.start(newPosition);
     } else {
       const newPositionInTrack = Math.min(this.#trackDuration, newPosition + this.#rangeStartPositionInTrack);
@@ -139,14 +133,14 @@ export class Track {
 
   async load() {
     try {
-      this.#changeState(TRACK_STATE.loading);
+      this.#changeState(STATE.loading);
       const buffer = await GlobalMediaQueue.downloadAndDecodeMedia({
         sourceUrl: this.#sourceUrl,
         mediaDecoder: this.#mediaDecoder,
         mediaDownloader: this.#mediaDownloader,
         audioContextProvider: this.#audioContextProvider
       });
-      if (this.#state === TRACK_STATE.disposed) {
+      if (this.#state === STATE.disposed) {
         return;
       }
       this.#buffer = buffer;
@@ -155,20 +149,20 @@ export class Track {
       this.#rangeEndPositionInTrack = this.#playbackRange[1] * this.#trackDuration;
       this.#rangeDuration = this.#rangeEndPositionInTrack - this.#rangeStartPositionInTrack;
       const audioContext = await this.#audioContextProvider.waitForAudioContext();
-      if (this.#state === TRACK_STATE.disposed) {
+      if (this.#state === STATE.disposed) {
         return;
       }
       this.#audioContext = audioContext;
-      this.#changeState(TRACK_STATE.ready);
+      this.#changeState(STATE.ready);
     } catch (error) {
-      if (this.#state !== TRACK_STATE.disposed) {
-        this.#changeState(TRACK_STATE.faulted, error);
+      if (this.#state !== STATE.disposed) {
+        this.#changeState(STATE.faulted, error);
       }
     }
   }
 
   start(position = null) {
-    if (this.#playState === TRACK_PLAY_STATE.started && position === null) {
+    if (this.#playState === PLAY_STATE.started && position === null) {
       return;
     }
 
@@ -190,7 +184,7 @@ export class Track {
       this.#sound.onended = null;
     }
 
-    if (this.#playState === TRACK_PLAY_STATE.started) {
+    if (this.#playState === PLAY_STATE.started) {
       this.#sound.stop();
     }
 
@@ -211,13 +205,13 @@ export class Track {
     this.#startTime = currentTime - startPositionInTrack;
     this.#sound.start(currentTime, startPositionInTrack, remainingDurationInRange);
 
-    if (this.#playState !== TRACK_PLAY_STATE.started) {
-      this.#changePlayState(TRACK_PLAY_STATE.started);
+    if (this.#playState !== PLAY_STATE.started) {
+      this.#changePlayState(PLAY_STATE.started);
     }
   }
 
   pause() {
-    if (this.#playState !== TRACK_PLAY_STATE.started) {
+    if (this.#playState !== PLAY_STATE.started) {
       return;
     }
 
@@ -226,7 +220,7 @@ export class Track {
     this.#lastStopPositionInTrack = this.#calculateCurrentPositionInTrack();
     this.#startTime = null;
 
-    this.#changePlayState(TRACK_PLAY_STATE.pausing);
+    this.#changePlayState(PLAY_STATE.pausing);
   }
 
   stop(moveToEnd = false) {
@@ -235,13 +229,13 @@ export class Track {
     this.#lastStopPositionInTrack = moveToEnd ? this.#rangeEndPositionInTrack : this.#calculateCurrentPositionInTrack();
     this.#startTime = null;
 
-    if (this.#playState !== TRACK_PLAY_STATE.stopped) {
-      this.#changePlayState(TRACK_PLAY_STATE.stopped);
+    if (this.#playState !== PLAY_STATE.stopped) {
+      this.#changePlayState(PLAY_STATE.stopped);
     }
   }
 
   #calculateCurrentPositionInTrack() {
-    return this.#playState === TRACK_PLAY_STATE.started
+    return this.#playState === PLAY_STATE.started
       ? this.#audioContext.currentTime - this.#startTime
       : this.#lastStopPositionInTrack ?? this.#rangeStartPositionInTrack ?? 0;
   }
@@ -261,7 +255,7 @@ export class Track {
       return;
     }
 
-    if (this.#playState === TRACK_PLAY_STATE.started) {
+    if (this.#playState === PLAY_STATE.started) {
       // To avoid ugly clicking during playback when adjusting the volume
       // we have to switch to the new volume gradually (sample by sample):
       this.#gain.gain.setTargetAtTime(actualValue, this.#audioContext.currentTime, GAIN_DECAY_DURATION);
@@ -282,7 +276,7 @@ export class Track {
   }
 
   dispose() {
-    if (this.#state === TRACK_STATE.disposed) {
+    if (this.#state === STATE.disposed) {
       return;
     }
 
@@ -299,8 +293,8 @@ export class Track {
     this.#trackDuration = null;
     this.#startTime = null;
     this.#lastStopPositionInTrack = null;
-    this.#state = TRACK_STATE.disposed;
-    this.#playState = TRACK_PLAY_STATE.stopped;
+    this.#state = STATE.disposed;
+    this.#playState = PLAY_STATE.stopped;
     this.#mediaDecoder = null;
     this.#mediaDownloader = null;
     this.#audioContextProvider = null;

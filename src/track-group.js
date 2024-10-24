@@ -2,7 +2,7 @@ import { Track } from './track.js';
 import { MediaDecoder } from './media-decoder.js';
 import { MediaDownloader } from './media-downloader.js';
 import { AudioContextProvider } from './audio-context-provider.js';
-import { DEFAULT_GAIN_PARAMS, TRACK_PLAY_STATE, TRACK_STATE } from './constants.js';
+import { DEFAULT_GAIN_PARAMS, PLAY_STATE, STATE } from './constants.js';
 
 export class TrackGroup {
   // Mandatory fields:
@@ -36,8 +36,8 @@ export class TrackGroup {
     this.#autoRewind = autoRewind;
     this.#gainParams = gainParams;
     this.#soloTrackIndex = trackConfiguration.soloTrackIndex;
-    this.#state = TRACK_STATE.created;
-    this.#playState = TRACK_PLAY_STATE.stopped;
+    this.#state = STATE.created;
+    this.#playState = PLAY_STATE.stopped;
     this.#error = null;
     this.#onStateChanged = onStateChanged;
     this.#onPlayStateChanged = onPlayStateChanged;
@@ -80,7 +80,7 @@ export class TrackGroup {
   }
 
   get duration() {
-    return this.#state === TRACK_STATE.ready
+    return this.#state === STATE.ready
       ? this.#masterTrack?.duration
       : null;
   }
@@ -134,16 +134,16 @@ export class TrackGroup {
     const allStates = new Set(this.#tracks.map(track => track.state));
     const firstError = this.#tracks.find(track => track.error)?.error ?? null;
 
-    if (allStates.has(TRACK_STATE.disposed)) {
+    if (allStates.has(STATE.disposed)) {
       this.dispose();
-    } else if (allStates.has(TRACK_STATE.faulted)) {
-      this.#tryChangeState(TRACK_STATE.faulted, firstError);
-    } else if (allStates.has(TRACK_STATE.loading)) {
-      this.#tryChangeState(TRACK_STATE.loading);
-    } else if (allStates.has(TRACK_STATE.created)) {
-      this.#tryChangeState(TRACK_STATE.created);
+    } else if (allStates.has(STATE.faulted)) {
+      this.#tryChangeState(STATE.faulted, firstError);
+    } else if (allStates.has(STATE.loading)) {
+      this.#tryChangeState(STATE.loading);
+    } else if (allStates.has(STATE.created)) {
+      this.#tryChangeState(STATE.created);
     } else {
-      this.#tryChangeState(TRACK_STATE.ready);
+      this.#tryChangeState(STATE.ready);
     }
   }
 
@@ -172,7 +172,7 @@ export class TrackGroup {
 
   start(position = null) {
     const playFromBeginning
-      = this.#playState === TRACK_PLAY_STATE.stopped
+      = this.#playState === PLAY_STATE.stopped
       && this.#autoRewind
       && (position ?? this.position) >= this.duration;
 
@@ -194,7 +194,7 @@ export class TrackGroup {
   }
 
   dispose() {
-    if (this.#state === TRACK_STATE.disposed) {
+    if (this.#state === STATE.disposed) {
       return;
     }
 
@@ -204,8 +204,8 @@ export class TrackGroup {
 
     this.#trackConfiguration = null;
     this.#soloTrackIndex = -1;
-    this.#state = TRACK_STATE.disposed;
-    this.#playState = TRACK_PLAY_STATE.stopped;
+    this.#state = STATE.disposed;
+    this.#playState = PLAY_STATE.stopped;
     this.#error = null;
     this.#onStateChanged = null;
     this.#onPlayStateChanged = null;

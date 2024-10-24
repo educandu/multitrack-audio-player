@@ -1,4 +1,4 @@
-export const TRACK_STATE = {
+export const STATE = {
   created: 'created',
   loading: 'loading',
   ready: 'ready',
@@ -6,7 +6,7 @@ export const TRACK_STATE = {
   disposed: 'disposed'
 };
 
-export const TRACK_PLAY_STATE = {
+export const PLAY_STATE = {
   started: 'started',
   pausing: 'pausing',
   stopped: 'stopped'

@@ -3,7 +3,7 @@ import { TrackGroup } from './track-group.js';
 import { MediaDecoder } from './media-decoder.js';
 import { MediaDownloader } from './media-downloader.js';
 import { AudioContextProvider } from './audio-context-provider.js';
-import { DEFAULT_GAIN_PARAMS, IS_BROWSER, TRACK_PLAY_STATE, TRACK_STATE } from './constants.js';
+import { DEFAULT_GAIN_PARAMS, IS_BROWSER, PLAY_STATE, STATE } from './constants.js';
 
 export class MultitrackAudioPlayer {
   #clock;
@@ -110,7 +110,7 @@ export class MultitrackAudioPlayer {
   }
 
   #handleTrackGroupStateChanged(newState, error) {
-    if (newState === TRACK_STATE.faulted) {
+    if (newState === STATE.faulted) {
       this.#clock.stop();
     }
 
@@ -118,7 +118,7 @@ export class MultitrackAudioPlayer {
   }
 
   #handleTrackGroupPlayStateChanged(newPlayState) {
-    if (newPlayState === TRACK_PLAY_STATE.started) {
+    if (newPlayState === PLAY_STATE.started) {
       this.#clock.start(true);
     } else {
       this.#clock.stop(true);
