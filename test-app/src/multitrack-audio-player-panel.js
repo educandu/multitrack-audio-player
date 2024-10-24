@@ -84,6 +84,7 @@ export default function MultitrackAudioPlayerPanel({ player }) {
             <th>ACTIONS</th>
             <td>
               <div>
+                <button type="button" onClick={() => player.initialize()}>Initialize</button>
                 <button type="button" onClick={() => player.load()}>Load</button>
                 <button type="button" onClick={() => player.start()}>Start</button>
                 <button type="button" onClick={() => player.pause()}>Pause</button>

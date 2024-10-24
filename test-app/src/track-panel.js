@@ -113,6 +113,7 @@ export default function TrackPanel({ track, solo = false, onSoloChange = null, s
               <th>ACTIONS</th>
               <td>
                 <div>
+                  <button type="button" onClick={() => track.initialize()}>Initialize</button>
                   <button type="button" onClick={() => track.load()}>Load</button>
                   <button type="button" onClick={() => track.start()}>Start</button>
                   <button type="button" onClick={() => track.pause()}>Pause</button>

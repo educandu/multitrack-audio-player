@@ -30,13 +30,11 @@ export class GlobalMediaQueue {
     GlobalMediaQueue.#decodingQueue.concurrency = newValue;
   }
 
-  static downloadAndDecodeMedia({ sourceUrl, mediaDownloader, mediaDecoder, audioContextProvider }) {
+  static downloadAndDecodeMedia({ sourceUrl, audioContext, mediaDownloader, mediaDecoder }) {
     return GlobalMediaQueue.#mediaSourceQueue.add(async () => {
       const arrayBuffer = await GlobalMediaQueue.#downloadQueue.add(() => {
         return mediaDownloader.downloadMedia(sourceUrl);
       });
-
-      const audioContext = await audioContextProvider.waitForAudioContext();
 
       const audioBuffer = await GlobalMediaQueue.#decodingQueue.add(() => {
         return mediaDecoder.decodeMedia(arrayBuffer, audioContext);

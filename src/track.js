@@ -131,14 +131,31 @@ export class Track {
     this.#applyGainParams();
   }
 
+  async initialize() {
+    try {
+      this.#changeState(STATE.initializing);
+      const audioContext = await this.#audioContextProvider.waitForAudioContext();
+      if (this.#state === STATE.disposed) {
+        return;
+      }
+      this.#audioContext = audioContext;
+      this.#changeState(STATE.initialized);
+
+    } catch (error) {
+      if (this.#state !== STATE.disposed) {
+        this.#changeState(STATE.faulted, error);
+      }
+    }
+  }
+
   async load() {
     try {
       this.#changeState(STATE.loading);
       const buffer = await GlobalMediaQueue.downloadAndDecodeMedia({
         sourceUrl: this.#sourceUrl,
+        audioContext: this.#audioContext,
         mediaDecoder: this.#mediaDecoder,
-        mediaDownloader: this.#mediaDownloader,
-        audioContextProvider: this.#audioContextProvider
+        mediaDownloader: this.#mediaDownloader
       });
       if (this.#state === STATE.disposed) {
         return;
@@ -148,11 +165,6 @@ export class Track {
       this.#rangeStartPositionInTrack = this.#playbackRange[0] * this.#trackDuration;
       this.#rangeEndPositionInTrack = this.#playbackRange[1] * this.#trackDuration;
       this.#rangeDuration = this.#rangeEndPositionInTrack - this.#rangeStartPositionInTrack;
-      const audioContext = await this.#audioContextProvider.waitForAudioContext();
-      if (this.#state === STATE.disposed) {
-        return;
-      }
-      this.#audioContext = audioContext;
       this.#changeState(STATE.ready);
     } catch (error) {
       if (this.#state !== STATE.disposed) {

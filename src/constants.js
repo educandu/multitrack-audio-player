@@ -1,5 +1,7 @@
 export const STATE = {
   created: 'created',
+  initializing: 'initializing',
+  initialized: 'initialized',
   loading: 'loading',
   ready: 'ready',
   faulted: 'faulted',

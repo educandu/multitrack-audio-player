@@ -15,6 +15,7 @@ export class MultitrackAudioPlayer {
 
   constructor({
     trackConfiguration,
+    autoInitialize = false,
     autoLoad = false,
     autoRewind = false,
     gainParams = DEFAULT_GAIN_PARAMS,
@@ -37,14 +38,21 @@ export class MultitrackAudioPlayer {
       mediaDecoder,
       mediaDownloader,
       audioContextProvider,
-      onStateChanged: (newState, error) => this.#handleTrackGroupStateChanged(newState, error),
-      onPlayStateChanged: newPlayState => this.#handleTrackGroupPlayStateChanged(newPlayState)
+      onStateChanged: (newState, error) => {
+        this.#handleTrackGroupStateChanged(newState, error);
+        if (newState === STATE.initialized && autoLoad && IS_BROWSER) {
+          this.load();
+        }
+      },
+      onPlayStateChanged: newPlayState => {
+        this.#handleTrackGroupPlayStateChanged(newPlayState);
+      }
     });
 
     this.#lastReportedPosition = this.#trackGroup.position;
 
-    if (autoLoad && IS_BROWSER) {
-      this.load();
+    if (autoInitialize && IS_BROWSER) {
+      this.initialize();
     }
   }
 
@@ -133,6 +141,10 @@ export class MultitrackAudioPlayer {
       this.#lastReportedPosition = newPosition;
       this.#onPositionChanged(newPosition);
     }
+  }
+
+  initialize() {
+    return this.#trackGroup.initialize();
   }
 
   load() {

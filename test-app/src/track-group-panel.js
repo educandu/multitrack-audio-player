@@ -84,6 +84,7 @@ export default function TrackGroupPanel({ trackGroup }) {
             <th>ACTIONS</th>
             <td>
               <div>
+                <button type="button" onClick={() => trackGroup.initialize()}>Initialize</button>
                 <button type="button" onClick={() => trackGroup.load()}>Load</button>
                 <button type="button" onClick={() => trackGroup.start()}>Start</button>
                 <button type="button" onClick={() => trackGroup.pause()}>Pause</button>

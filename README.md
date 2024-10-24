@@ -67,6 +67,7 @@ const track = new Track({
 });
 
 // Methods:
+track.initialize(); // Waits for the audio context. Has to be called before loading.
 track.load(); // Downloads and decodes the media file. Has to be called before any playback.
 track.start(); // Starts at the current position, if not already playing.
 track.start(5.5); // Starts the track 5.5 seconds into the media.
@@ -160,8 +161,8 @@ trackGroup.soloTrackIndex = 1;
 #### MultitrackAudioPlayer
 
 The `MultitrackAudioPlayer` class wraps a `TrackGroup` and adds a clock with change notifications
-on the current playback position as well as an option for automatic loading on top.
-In most cases this is the API that should be used by consumers of this library.
+on the current playback position as well as an option for automatic initialization and loading
+on top. In most cases this is the API that should be used by consumers of this library.
 
 ~~~js
 // Example for creating a new player:
@@ -186,9 +187,13 @@ const player = new MultitrackAudioPlayer({
     // Determines, which track should play solo initially (-1 for none)
     soloTrackIndex: -1
   },
-  // Optional, will immediately start loading the tracks, without explicit
-  // call to the `load` function. Consumers nevertheless have to wait until the
-  // `state` changes to `ready` before starting playback.
+  // Optional (default: false), will immediately start waiting for the audio context,
+  // without explicit call to the `initialize` function. Consumers nevertheless
+  // have to wait until the `state` changes to `initialized` before calling `load`.
+  autoInitialize: true,
+  // Optional (default: false), will immediately start loading the tracks after initialization,
+  // without explicit call to the `load` function. Consumers nevertheless have
+  // to wait until the `state` changes to `ready` before starting playback.
   autoLoad: true,
   // Optional, will automatically start from the beginning, when `start` is called
   // after the track has been played previously unto the very end. Default: false

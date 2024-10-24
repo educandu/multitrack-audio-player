@@ -138,6 +138,10 @@ export class TrackGroup {
       this.dispose();
     } else if (allStates.has(STATE.faulted)) {
       this.#tryChangeState(STATE.faulted, firstError);
+    } else if (allStates.has(STATE.initializing)) {
+      this.#tryChangeState(STATE.initializing);
+    } else if (allStates.has(STATE.initialized)) {
+      this.#tryChangeState(STATE.initialized);
     } else if (allStates.has(STATE.loading)) {
       this.#tryChangeState(STATE.loading);
     } else if (allStates.has(STATE.created)) {
@@ -164,6 +168,10 @@ export class TrackGroup {
       this.#playState = newPlayState;
       this.#onPlayStateChanged(newPlayState);
     }
+  }
+
+  initialize() {
+    return Promise.all(this.#tracks.map(track => track.initialize()));
   }
 
   load() {

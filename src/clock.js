@@ -20,6 +20,10 @@ export class Clock {
   }
 
   stop(tickImmediately = false) {
+    if (!this.#currentTimeout) {
+      return;
+    }
+
     if (tickImmediately) {
       this.#onTick();
     }
