@@ -172,11 +172,10 @@ export class TrackGroup {
         this.start(0);
       } else {
         this.stop(true);
-        this.#tryChangePlayState(PLAY_STATE.stopped);
       }
-    } else {
-      this.#tryChangePlayState(this.#masterTrack.playState);
     }
+
+    this.#tryChangePlayState(this.#masterTrack.playState);
   }
 
   #tryChangeState(newState, error = null) {
