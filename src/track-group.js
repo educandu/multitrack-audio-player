@@ -163,13 +163,17 @@ export class TrackGroup {
   }
 
   #handleTrackPlayStateChanged() {
-    if (
-      this.#loop
-      && this.#playState === PLAY_STATE.started
+    const masterTrackEnded = this.#playState === PLAY_STATE.started
       && this.#masterTrack.playState === PLAY_STATE.stopped
-      && this.#masterTrack.position === this.#masterTrack?.duration
-    ) {
-      this.start(0);
+      && this.#masterTrack.position === this.#masterTrack?.duration;
+
+    if (masterTrackEnded) {
+      if (this.#loop) {
+        this.start(0);
+      } else {
+        this.stop(true);
+        this.#tryChangePlayState(PLAY_STATE.stopped);
+      }
     } else {
       this.#tryChangePlayState(this.#masterTrack.playState);
     }
