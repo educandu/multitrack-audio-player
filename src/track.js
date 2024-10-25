@@ -277,9 +277,18 @@ export class Track {
   }
 
   #changeState(newState, error = null) {
+    let errorInstanceOrNull;
+    if (error === null || typeof error === 'undefined') {
+      errorInstanceOrNull = null;
+    } else if (error instanceof Error) {
+      errorInstanceOrNull = error;
+    } else {
+      errorInstanceOrNull = new Error(String(error), {});
+    }
+
     this.#state = newState;
-    this.#error = error;
-    this.#onStateChanged(newState, error);
+    this.#error = errorInstanceOrNull;
+    this.#onStateChanged(newState, errorInstanceOrNull);
   }
 
   #changePlayState(newPlayState) {
