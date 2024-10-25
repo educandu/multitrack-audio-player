@@ -9,6 +9,7 @@ export class TrackGroup {
   #trackConfiguration;
 
   // Optional fields:
+  #loop;
   #autoRewind;
   #gainParams;
   #soloTrackIndex;
@@ -24,6 +25,7 @@ export class TrackGroup {
 
   constructor({
     trackConfiguration,
+    loop = false,
     autoRewind = false,
     gainParams = DEFAULT_GAIN_PARAMS,
     mediaDecoder = new MediaDecoder(),
@@ -33,6 +35,7 @@ export class TrackGroup {
     onPlayStateChanged = () => {}
   }) {
     this.#trackConfiguration = trackConfiguration;
+    this.#loop = loop;
     this.#autoRewind = autoRewind;
     this.#gainParams = gainParams;
     this.#soloTrackIndex = trackConfiguration.soloTrackIndex;
@@ -95,6 +98,14 @@ export class TrackGroup {
     }
   }
 
+  get loop() {
+    return this.#loop;
+  }
+
+  set loop(newLoop) {
+    this.#loop = newLoop;
+  }
+
   get autoRewind() {
     return this.#autoRewind;
   }
@@ -152,7 +163,16 @@ export class TrackGroup {
   }
 
   #handleTrackPlayStateChanged() {
-    this.#tryChangePlayState(this.#masterTrack.playState);
+    if (
+      this.#loop
+      && this.#playState === PLAY_STATE.started
+      && this.#masterTrack.playState === PLAY_STATE.stopped
+      && this.#masterTrack.position === this.#masterTrack?.duration
+    ) {
+      this.start(0);
+    } else {
+      this.#tryChangePlayState(this.#masterTrack.playState);
+    }
   }
 
   #tryChangeState(newState, error = null) {

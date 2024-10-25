@@ -17,6 +17,7 @@ export class MultitrackAudioPlayer {
     trackConfiguration,
     autoInitialize = false,
     autoLoad = false,
+    loop = false,
     autoRewind = false,
     gainParams = DEFAULT_GAIN_PARAMS,
     mediaDecoder = new MediaDecoder(),
@@ -33,6 +34,7 @@ export class MultitrackAudioPlayer {
 
     this.#trackGroup = new TrackGroup({
       trackConfiguration,
+      loop,
       autoRewind,
       gainParams,
       mediaDecoder,
@@ -87,6 +89,14 @@ export class MultitrackAudioPlayer {
   set position(newPosition) {
     this.#trackGroup.position = newPosition;
     this.#reportPosition();
+  }
+
+  get loop() {
+    return this.#trackGroup.loop;
+  }
+
+  set loop(newLoop) {
+    this.#trackGroup.loop = newLoop;
   }
 
   get autoRewind() {

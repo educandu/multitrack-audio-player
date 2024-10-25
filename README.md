@@ -101,7 +101,7 @@ track.gainParams = { ...track.gainParams, gain: 0.5 };
 
 The `TrackGroup` class wraps a collection of tracks while providing an API (mostly) identical
 to a single track. It manages state, play state and volume coordination between the tracks,
-including solo state. It also adds an option for automatic rewinding.
+including solo state. It also adds options for automatic rewinding and looping.
 
 ~~~js
 // Example for creating a new track group:
@@ -126,6 +126,9 @@ const trackGroup = new TrackGroup({
     // Determines, which track should play solo initially (-1 for none)
     soloTrackIndex: -1
   },
+  // Optional, will automatically start from the beginning, when the end of the
+  // main track is reached (Play state will remain `started`). Default: false
+  loop: true,
   // Optional, will automatically start from the beginning, when `start` is called
   // after the track has been played previously unto the very end. Default: false
   autoRewind: true,
@@ -197,6 +200,9 @@ const player = new MultitrackAudioPlayer({
   autoLoad: true,
   // Optional, will automatically start from the beginning, when `start` is called
   // after the track has been played previously unto the very end. Default: false
+  loop: true,
+  // Optional, will automatically start from the beginning, when the end of the
+  // main track is reached (Play state will remain `started`). Default: false
   autoRewind: true,
   // Optional, has to be an object with two fields:
   // * `gain` (float between 0 and 1) that stands for the volume between 0% and 100%.

@@ -65,6 +65,18 @@ export default function MultitrackAudioPlayerPanel({ player }) {
             </td>
           </tr>
           <tr>
+            <th>loop</th>
+            <td>
+              <div>
+                <input
+                  type="checkbox"
+                  checked={player.loop}
+                  onChange={event => { player.loop = event.target.checked; }}
+                  />
+              </div>
+            </td>
+          </tr>
+          <tr>
             <th>autoRewind</th>
             <td>
               <div>
