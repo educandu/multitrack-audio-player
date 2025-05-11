@@ -205,7 +205,7 @@ export class Track {
     this.#sound.onended = () => this.#onSoundEnded();
 
     this.#gain = this.#audioContext.createGain();
-    this.#applyGainParams();
+    this.#applyGainParams(true);
 
     this.#sound.connect(this.#gain);
     this.#gain.connect(this.#audioContext.destination);
@@ -256,7 +256,7 @@ export class Track {
     this.stop(true);
   }
 
-  #applyGainParams() {
+  #applyGainParams(instant = false) {
     if (!this.#gain) {
       return;
     }
@@ -267,7 +267,7 @@ export class Track {
       return;
     }
 
-    if (this.#playState === PLAY_STATE.started) {
+    if (this.#playState === PLAY_STATE.started && !instant) {
       // To avoid ugly clicking during playback when adjusting the volume
       // we have to switch to the new volume gradually (sample by sample):
       this.#gain.gain.setTargetAtTime(actualValue, this.#audioContext.currentTime, GAIN_DECAY_DURATION);
