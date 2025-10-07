@@ -22,7 +22,7 @@
     "standardized-audio-context": "^25.3.77"
   },
   "devDependencies": {
-    "@educandu/dev-tools": "^14.0.0",
+    "@educandu/dev-tools": "^14.3.0",
     "@vitest/coverage-v8": "^0.34.6",
     "cors": "^2.8.5",
     "del": "^7.1.0",
