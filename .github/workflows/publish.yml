@@ -3,7 +3,9 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+permissions:
+  id-token: write
+  contents: write
 jobs:
   publish:
     runs-on: ubuntu-24.04
@@ -21,6 +23,8 @@ jobs:
         with:
           node-version: "20.17.0"
           cache: "yarn"
+      - name: Update npm
+        run: npm install -g npm@11.6.2
       - name: Install node modules
         run: yarn install --non-interactive --check-files --frozen-lockfile
       - name: Get tag from build environment
@@ -32,8 +36,6 @@ jobs:
         run: npm version --allow-same-version --git-tag-version=false ${{steps.tag.outputs.version}}
       - name: Build
         run: ./node_modules/.bin/gulp build
-      - name: Authenticate with npm
-        run: npm set //registry.npmjs.org/:_authToken ${{secrets.NPM_AUTH_TOKEN}}
       - name: Publish to npm
         run: npm publish
       - name: Create Github release and tag JIRA issues
